@@ -37,7 +37,7 @@ function dataContext(configurationPath) {
      * @memberOf req
      */
     req.context = new ExpressDataContext(config);
-    req.on('end', ()=> {
+    req.on('end', function() {
       //on end
       if (req.context) {
         //finalize data context
@@ -47,7 +47,7 @@ function dataContext(configurationPath) {
       }
     });
     return next();
-  }
+  };
 }
 
 module.exports.ExpressDataContext = ExpressDataContext;
