@@ -68,8 +68,7 @@
         "name": "familyName",
         "title": "Family Name",
         "description": "Family name.",
-        "type": "Text",
-        "size":255
+        "type": "Text"
     },
     {
         "name": "follows",
@@ -82,22 +81,19 @@
         "name": "gender",
         "title": "Gender",
         "description": "Gender of the person.",
-        "type": "Text",
-        "size":20
+        "type": "Text"
     },
     {
         "name": "givenName",
         "title": "Given Name",
         "description": "Given name. In the U.S., the first name of a Person. This can be used along with familyName instead of the Name property.",
-        "type": "Text",
-        "size":255
+        "type": "Text"
     },
     {
         "name": "jobTitle",
         "title": "Job Title",
         "description": "The job title of the person (for example, Financial Manager).",
-        "type": "Text",
-        "size":120
+        "type": "Text"
     },
     {
         "name": "email",
