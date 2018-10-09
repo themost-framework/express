@@ -6,6 +6,9 @@
  * Use of this source code is governed by an BSD-3-Clause license that can be
  * found in the LICENSE file at https://themost.io/license
  */
-var _app = require("./app");
-module.exports.ExpressDataContext = _app.ExpressDataContext;
-module.exports.ExpressDataApplication = _app.ExpressDataApplication;
+ var FunctionContext = require("@themost/data/data-context").FunctionContext;
+ var Q = require("q");
+ 
+ Object.assign(FunctionContext.prototype, {
+     
+ });

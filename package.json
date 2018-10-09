@@ -29,6 +29,11 @@
   },
   "dependencies": {
     "@themost/common": "^2.1.6",
-    "@themost/data": "^2.1.14"
+    "@themost/data": "^2.1.14",
+    "passport": "^0.4.0",
+    "passport-http": "^0.3.0",
+    "pluralize": "^7.0.0",
+    "q": "^1.5.1",
+    "symbol": "^0.3.1"
   }
 }
