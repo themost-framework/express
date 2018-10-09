@@ -1,5 +1,5 @@
-# most-data-express
-MOST Data ORM Express Middleware
+# @themost/express
+MOST Data ORM Extension for ExpressJS
 
 ### Installation
 
