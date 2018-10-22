@@ -14,6 +14,9 @@ var IApplication = require("@themost/common/app").IApplication;
 var DefaultDataContext = require("@themost/data/data-context").DefaultDataContext;
 var ConfigurationBase = require("@themost/common/config").ConfigurationBase;
 var DataConfigurationStrategy = require("@themost/data/data-configuration").DataConfigurationStrategy;
+var DataConfiguration = require("@themost/data/data-configuration").DataConfiguration;
+var ODataConventionModelBuilder = require("@themost/data/odata").ODataConventionModelBuilder;
+var ODataModelBuilder = require("@themost/data/odata").ODataModelBuilder;
 
 
 let configurationProperty = Symbol('configuration');
@@ -30,6 +33,8 @@ function ExpressDataApplication(configurationPath) {
     this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath));
     // use default data configuration strategy
     this[configurationProperty].useStrategy(DataConfigurationStrategy, DataConfigurationStrategy);
+    // use default model builder
+    this.useModelBuilder();
 }
 LangUtils.inherits(ExpressDataApplication, IApplication);
 
@@ -43,7 +48,27 @@ LangUtils.inherits(ExpressDataApplication, IApplication);
 ExpressDataApplication.prototype.useStrategy = function(serviceCtor, strategyCtor) {
     return this[configurationProperty].useStrategy(serviceCtor, strategyCtor);
 };
-
+/**
+ * Returns the instance of ODataModelBuilder strategy which has been activated for this application
+ * @returns ODataModelBuilder
+ */ 
+ExpressDataApplication.prototype.useModelBuilder = function() {
+    // initialize data model builder
+    let builder = new ODataConventionModelBuilder(new DataConfiguration(this.getConfiguration().getConfigurationPath()));
+    // initialize model builder
+    builder.initializeSync();
+    // use model convention builder
+    this.useStrategy(ODataModelBuilder, function() {
+      return builder;
+    });
+};
+/**
+ * Returns the instance of ODataModelBuilder strategy which has been activated for this application
+ * @returns ODataModelBuilder
+ */ 
+ExpressDataApplication.prototype.getBuilder = function() {
+  return this.getStrategy(ODataModelBuilder);
+}
 
 /**
 * @param {Function} serviceCtor

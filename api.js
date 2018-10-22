@@ -50,7 +50,7 @@ router.get('/:entitySet/:id', function(req, res, next) {
     }
   thisModel.where(thisModel.primaryKey).equal(req.params.id).getItem().then(function(value) {
     if (typeof value === 'undefined') {
-      return res.status(204).send();
+      return res.status(404).send();
     }
       return res.json(value);
   }).catch(function(err) {
