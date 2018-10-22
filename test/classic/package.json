@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@themost/data": "^2.1.15",
     "@themost/sqlite": "^2.1.2",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",

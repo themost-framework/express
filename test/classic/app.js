@@ -11,7 +11,7 @@ var TextUtils = require("@themost/common").TextUtils;
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var apiRouter = require('../../api');
+var serviceRouter = require('../../service');
 var passport = require("passport");
 var app = express();
 
@@ -86,7 +86,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/api', passport.authenticate('basic', { session: false }), apiRouter);
+app.use('/api', passport.authenticate('basic', { session: false }), serviceRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
