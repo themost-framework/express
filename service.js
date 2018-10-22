@@ -110,7 +110,7 @@ function getEntitySetMiddleware() {
         }).catch(function(err) {
             return next(err);
         });
-    }
+    };
 }
 
 
@@ -209,7 +209,7 @@ function deleteEntityMiddleware() {
         }).catch(function(err) {
             return next(err);
         });
-    }
+    };
 }
 
 
@@ -442,12 +442,12 @@ router.post('/:entitySet', bindEntitySetMiddleware(), updateEntitySetMiddleware(
 router.put('/:entitySet', bindEntitySetMiddleware(), updateEntitySetMiddleware());
 
 /* DELETE /:entitySet removes a data object or an array of data objects. */
-router.delete('/:entitySet', bindEntitySetMiddleware(), updateEntitySetMiddleware());
+router.delete('/:entitySet', bindEntitySetMiddleware(), deleteEntitySetMiddleware());
 
 /* GET /:entitySet/:id  */
 router.get('/:entitySet/:id', bindEntitySetMiddleware(), getEntityMiddleware());
 
-/* DELETE /person/:id delete a data object by id. */
+/* DELETE /:entitySet/:id delete a data object by id. */
 router.delete('/:entitySet/:id', bindEntitySetMiddleware(), deleteEntityMiddleware());
 
 /* GET /:entitySet/:id/:navigationProperty  */
