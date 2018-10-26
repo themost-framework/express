@@ -45,6 +45,20 @@ var HttpMethodNotAllowedError = require('@themost/common/errors').HttpMethodNotA
  */
  
  /**
+ * Gets or sets the name of the route parameter that holds the name of an entity set action
+ * @property
+ * @name EntitySetOptions#entityActionFrom
+ * @returns string
+ */
+ 
+ /**
+ * Gets or sets the name of the route parameter that holds the name of an entity set function
+ * @property
+ * @name EntitySetOptions#entityFunctionFrom
+ * @returns string
+ */
+ 
+ /**
  * Interface for options that may be passed to middlewares that handles requests against entities.
  *
  * @interface EntityOptions
@@ -72,9 +86,16 @@ var HttpMethodNotAllowedError = require('@themost/common/errors').HttpMethodNotA
  */
  
  /**
- * Gets or sets the name of the route parameter that holds the entity's action
+ * Gets or sets the name of the route parameter that holds the name of an entity action
  * @property
  * @name EntityOptions#entityActionFrom
+ * @returns string
+ */
+ 
+ /**
+ * Gets or sets the name of the route parameter that holds the name of an entity function
+ * @property
+ * @name EntityOptions#entityFunctionFrom
  * @returns string
  */
  
@@ -717,10 +738,10 @@ function getEntityNavigationProperty(options) {
   * @param {EntityOptions=} options
  * @returns {Function}
  */
-function getEntitySetAction(options) {
+function getEntitySetFunction(options) {
     // assign defaults
     var opts = Object.assign({
-        entityActionFrom: 'entityAction',
+        entityFunctionFrom: 'entityFunction',
         navigationPropertyFrom: 'navigationProperty'
     }, options);
     return function(req, res, next) {
@@ -743,22 +764,22 @@ function getEntitySetAction(options) {
     if (_.isNil(model)) {
         return next(new HttpNotFoundError("Entity not found"));
     }
-    var entityAction = req.params[opts.entityActionFrom];
+    var entityFunction = req.params[opts.entityFunctionFrom];
     var navigationProperty = req.params[opts.navigationPropertyFrom];
     /**
      * get current model builder
      * @type {ODataModelBuilder}
      */
     var builder = req.context.getApplication().getStrategy(ODataModelBuilder);
-    var action = req.entitySet.entityType.collection.hasFunction(entityAction);
-    if (action) {
+    var func = req.entitySet.entityType.collection.hasFunction(entityFunction);
+    if (func) {
         //get data object class
         var DataObjectClass = model.getDataObjectType();
-        var staticFunc = EdmMapping.hasOwnFunction(DataObjectClass,entityAction);
+        var staticFunc = EdmMapping.hasOwnFunction(DataObjectClass,entityFunction);
         if (staticFunc) {
             return Q.resolve(staticFunc(req.context)).then(function(result) {
-                var returnsCollection = _.isString(action.returnCollectionType);
-                var returnModel = req.context.model(action.returnType || action.returnCollectionType);
+                var returnsCollection = _.isString(func.returnCollectionType);
+                var returnModel = req.context.model(func.returnType || func.returnCollectionType);
                 if (_.isNil(returnModel)) {
                     return Q.reject(new HttpNotFoundError("Result Entity not found"));
                 }
@@ -802,10 +823,10 @@ function getEntitySetAction(options) {
                     }
                     return filter( _.extend({
                             "$top": 25
-                        },context.params)).then(function(q) {
-                        var count = req.context.params.hasOwnProperty('$inlinecount') ? 
-                            parseBoolean(req.context.params.$inlinecount) : (req.context.params.hasOwnProperty('$count') ? 
-                            parseBoolean(req.context.params.$count) : false);
+                        },req.query)).then(function(q) {
+                        var count = req.query.hasOwnProperty('$inlinecount') ? 
+                            parseBoolean(req.query.$inlinecount) : (req.query.hasOwnProperty('$count') ? 
+                            parseBoolean(req.query.$count) : false);
                         var q1 = extendQueryable(result, q);
                         if (count) {
                             return q1.getList().then(function(result) {
@@ -851,10 +872,104 @@ function getEntitySetAction(options) {
                 })(req, res, next);
             });
         }
-        return next();
+        // an entity set function method with the specified name was not found, throw error
+        return next(new Error('The specified entity set function cannot be found'));
     }
+    // an entity set function was not found, continue
     return next();    
-        
+    };
+}
+
+/**
+ * Handles incoming POST requests against an entity set action  e.g. GET /api/people/me/
+  * @param {EntityOptions=} options
+ * @returns {Function}
+ */
+function postEntitySetAction(options) {
+    // assign defaults
+    var opts = Object.assign({
+        entityActionFrom: 'entityAction'
+    }, options);
+    return function(req, res, next) {
+        if (typeof req.context === 'undefined') {
+            return next(new Error('Invalid request state. Request context is undefined.'));
+        }
+        // try to bind current request with the given entity set
+        if (opts.entitySet) {
+            req.entitySet = tryBindEntitySet(req, opts.entitySet);
+            // throw error if the given entity set cannot be found
+            if (typeof req.entitySet === 'undefined') {
+                return next(new HttpNotFoundError('The given entity set cannot be found'));
+            }
+        }
+        if (typeof req.entitySet === 'undefined') {
+            return next();
+        }
+        var model = req.context.model(req.entitySet.entityType.name);
+        if (_.isNil(model)) {
+            return next(new HttpNotFoundError("Entity not found"));
+        }
+        var entityAction = req.params[opts.entityActionFrom];
+        var action = req.entitySet.entityType.collection.hasAction(entityAction);
+        if (action) {
+            //get data object class
+            var DataObjectClass = model.getDataObjectType();
+            var actionFunc = EdmMapping.hasOwnFunction(DataObjectClass,entityAction);
+            if (typeof actionFunc !== 'function') {
+                return next(new Error('Invalid entity set configuration. The specified action cannot be found'))
+            }
+            var actionParameters = [];
+            var parameters = _.filter(action.parameters, function(x) {
+                return x.name !== 'bindingParameter';
+            });
+            // if parameters must be included in body
+            if (parameters.length) {
+                // validate request body
+                if (typeof req.body === 'undefined') {
+                    // throw bad request if body is missing
+                    return next(new HttpBadRequestError('Request body cannot be empty'));
+                }
+            }
+            // add context as the first parameter
+            actionParameters.push(req.context);
+            // todo: pass request body as parameter
+            // add other parameters by getting request body attributes
+            _.forEach(parameters, function(x) {
+                actionParameters.push(req.body[x.name]);
+            });
+            // invoke action
+            return Q.resolve(actionFunc.call(null, actionParameters)).then(function(result) {
+                // check if action returns a collection of object
+                var returnsCollection = _.isString(action.returnCollectionType);
+                if (result instanceof DataQueryable) {
+                    // todo:: validate return collection type and pass system query options ($filter, $expand, $select etc)
+                    if (returnsCollection) {
+                        // call DataModel.getItems() instead of DataModel.getList()
+                        // an action that returns a collection of objects must always return a native array (without paging parameters)
+                        return result.getItems().then(function(finalResult) {
+                           return res.json(finalResult); 
+                        });
+                    }
+                    else {
+                        // otherwise call DataModel.getItem() to get only the first item of the result set
+                        return result.getItem().then(function(finalResult) {
+                           return res.json(finalResult); 
+                        });
+                    }
+                }
+                if (typeof result === 'undefined') {
+                    // return no content
+                    return res.status(204).send();
+                }
+                // return result as native object
+                return res.json(result);
+            }).catch(function(err) {
+                return next(err);
+            });
+            
+        }
+        // there is no action with the given name, continue
+        return next();
     };
 }
 
@@ -866,4 +981,5 @@ module.exports.getEntity = getEntity;
 module.exports.postEntity = postEntity;
 module.exports.deleteEntity = deleteEntity;
 module.exports.getEntityNavigationProperty = getEntityNavigationProperty;
-module.exports.getEntitySetAction = getEntitySetAction;
+module.exports.getEntitySetAction = getEntitySetFunction;
+module.exports.postEntitySetAction = postEntitySetAction;

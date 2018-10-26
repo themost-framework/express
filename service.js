@@ -17,7 +17,8 @@ var getEntity = require("./middleware").getEntity;
 var postEntity = require("./middleware").postEntity;
 var deleteEntity = require("./middleware").deleteEntity;
 var getEntityNavigationProperty = require("./middleware").getEntityNavigationProperty;
-var getEntitySetAction = require("./middleware").getEntitySetAction;
+var getEntitySetFunction = require("./middleware").getEntitySetFunction;
+var postEntitySetAction = require("./middleware").postEntitySetAction;
 
 /* GET /:entitySet  */
 router.get('/:entitySet', bindEntitySet(), getEntitySet());
@@ -32,10 +33,13 @@ router.put('/:entitySet', bindEntitySet(), postEntitySet());
 router.delete('/:entitySet', bindEntitySet(), deleteEntitySet());
 
 /* GET /:entitySet/:entityAction/  */
-router.get('/:entitySet/:entityAction', bindEntitySet(), getEntitySetAction());
+router.get('/:entitySet/:entityFunction', bindEntitySet(), getEntitySetFunction());
+
+/* POST /:entitySet/:entityAction/  */
+router.post('/:entitySet/:entityAction', bindEntitySet(), postEntitySetAction());
 
 /* GET /:entitySet/:entityAction/  */
-router.get('/:entitySet/:entityAction/:navigationProperty', bindEntitySet(), getEntitySetAction());
+router.get('/:entitySet/:entityAction/:navigationProperty', bindEntitySet(), getEntitySetFunction());
 
 /* GET /:entitySet/:id  */
 router.get('/:entitySet/:id', bindEntitySet(), getEntity());
