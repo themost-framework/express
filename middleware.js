@@ -16,8 +16,6 @@ var DataQueryable = require("@themost/data/data-queryable").DataQueryable;
 var parseBoolean = require('@themost/common/utils').LangUtils.parseBoolean;
 var HttpNotFoundError = require('@themost/common/errors').HttpNotFoundError;
 var HttpBadRequestError = require('@themost/common/errors').HttpBadRequestError;
-var HttpMethodNotAllowedError = require('@themost/common/errors').HttpMethodNotAllowedError;
-
 /**
  * Interface for options that may be passed to bindEntitySet middleware.
  *
@@ -523,11 +521,6 @@ function getEntityNavigationProperty(options) {
             return next();
         }
         /**
-         * get current model builder
-         * @type {ODataModelBuilder}
-         */
-        var builder = req.context.getApplication().getStrategy(ODataModelBuilder);
-        /**
          * get current data model
          * @type {DataModel}
          */
@@ -541,73 +534,6 @@ function getEntityNavigationProperty(options) {
         thisModel.where(thisModel.primaryKey).equal(req.params[opts.from]).select(thisModel.primaryKey).getTypedItem().then(function(obj) {
             if (typeof obj === 'undefined') {
                 return res.status(404).send();
-            }
-            //check if entity set has a function with the same name
-            var action = req.entitySet.entityType.hasFunction(navigationProperty);
-            if (action) {
-                var returnsCollection = _.isString(action.returnCollectionType);
-                var returnModel = req.context.model(action.returnType || action.returnCollectionType);
-                // find method
-                var memberFunc = EdmMapping.hasOwnFunction(obj, action.name);
-                if (memberFunc) {
-                    var funcParameters = [];
-                    _.forEach(action.parameters, function(x) {
-                        if (x.name !== 'bindingParameter') {
-                            funcParameters.push(LangUtils.parseValue(req.query[x.name]));
-                        }
-                    });
-                    return Q.resolve(memberFunc.apply(obj, funcParameters)).then(function(result) {
-                        if (result instanceof DataQueryable) {
-                            if (_.isNil(returnModel)) {
-                                return next(new HttpNotFoundError("Result Entity not found"));
-                            }
-                            var returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
-                            if (_.isNil(returnEntitySet)) {
-                                returnEntitySet = builder.getEntity(returnModel.name);
-                            }
-                            var filter = Q.nbind(returnModel.filter, returnModel);
-                            //if the return value is a single instance
-                            if (!returnsCollection) {
-                                //pass context parameters (only $select and $expand)
-                                var params = _.pick(req.query, [
-                                    "$select",
-                                    "$expand"
-                                ]);
-                                //filter with parameters
-                                return filter(params).then(function(q) {
-                                    // extend data queryable
-                                    var q1 = extendQueryable(result, q);
-                                    //get item
-                                    return q1.getItem().then(function(result) {
-                                        if (_.isNil(result)) {
-                                            return next(new HttpNotFoundError());
-                                        }
-                                        //return result
-                                        return res.json(result);
-                                    });
-                                });
-                            }
-                            //else if the return value is a collection
-                            return filter(_.extend({
-                                "$top": 25
-                            }, req.query)).then(function(q) {
-                                var count = req.query.hasOwnProperty('$inlinecount') ? parseBoolean(req.query.$inlinecount) : (req.query.hasOwnProperty('$count') ? parseBoolean(req.query.$count) : false);
-                                var q1 = extendQueryable(result, q);
-                                if (count) {
-                                    return q1.getList().then(function(result) {
-                                        //return result
-                                        return res.json(result);
-                                    });
-                                }
-                                return q1.getItems().then(function(result) {
-                                    //return result
-                                    return res.json(result);
-                                });
-                            });
-                        }
-                        return res.json(result);
-                    });
-                }
             }
             //get primary key
             var key = obj[thisModel.primaryKey];
@@ -625,34 +551,37 @@ function getEntityNavigationProperty(options) {
                     var otherFields = _.filter(otherModel.attributes, function(x) {
                         return x.type === thisModel.name;
                     });
+                    // if there are more than one fields that may define an association with the other model
                     if (otherFields.length > 1) {
-                        return next(new HttpMethodNotAllowedError("Multiple associations found"));
+                        // exit
+                        return next();
                     }
-                    else if (otherFields.length === 1) {
-                        var otherField = otherFields[0];
-                        mapping = otherModel.inferMapping(otherField.name);
-                        if (mapping && mapping.associationType === 'junction') {
-                            var attr;
-                            //search model for attribute that has an association of type junction with child model
-                            if (mapping.parentModel === otherModel.name) {
-                                attr = _.find(otherModel.attributes, function(x) {
-                                    return x.name === otherField.name;
-                                });
-                            }
-                            else {
-                                attr = _.find(thisModel.attributes, function(x) {
-                                    return x.type === otherModel.name;
-                                });
-                            }
-                            if (attr) {
-                                thisModel = attr.name;
-                                mapping = thisModel.inferMapping(attr.name);
-                            }
+                    // get first attribute
+                    var otherField = otherFields[0];
+                    // validate mapping
+                    mapping = otherModel.inferMapping(otherField.name);
+                    if (mapping && mapping.associationType === 'junction') {
+                        var attr;
+                        //search model for attribute that has an association of type junction with child model
+                        if (mapping.parentModel === otherModel.name) {
+                            attr = _.find(otherModel.attributes, function(x) {
+                                return x.name === otherField.name;
+                            });
+                        }
+                        else {
+                            attr = _.find(thisModel.attributes, function(x) {
+                                return x.type === otherModel.name;
+                            });
+                        }
+                        if (attr) {
+                            thisModel = attr.name;
+                            mapping = thisModel.inferMapping(attr.name);
                         }
                     }
                 }
+                // if mapping is undefined exit
                 if (_.isNil(mapping)) {
-                    return next(new HttpNotFoundError("Association not found"));
+                    return next();
                 }
             }
             if (mapping.associationType === 'junction') {
@@ -789,12 +718,15 @@ function getEntitySetFunction(options) {
         if (staticFunc) {
             return Q.resolve(staticFunc(req.context)).then(function(result) {
                 var returnsCollection = _.isString(func.returnCollectionType);
-                var returnModel = req.context.model(func.returnType || func.returnCollectionType);
-                if (_.isNil(returnModel)) {
-                    return Q.reject(new HttpNotFoundError("Result Entity not found"));
-                }
-                var returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
                 if (result instanceof DataQueryable) {
+                    // get return model (if any)
+                    var returnModel = req.context.model(func.returnType || func.returnCollectionType);
+                    // throw exception for unknown model
+                    if (_.isNil(returnModel)) {
+                        return Q.reject(new HttpNotFoundError("Result Entity not found"));
+                    }
+                    // get return entity set
+                    var returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
                     var filter = Q.nbind(returnModel.filter, returnModel);
                     if (!returnsCollection) {
                         //pass context parameters (if navigationProperty is empty)
@@ -880,7 +812,9 @@ function getEntitySetFunction(options) {
                     from: '_id',
                     navigationPropertyFrom:'_navigationProperty'
                 })(req, res, next);
-            });
+            }).catch((function(err) {
+                return next(err);
+            }));
         }
         // an entity set function method with the specified name was not found, throw error
         return next(new Error('The specified entity set function cannot be found'));
@@ -924,9 +858,9 @@ function postEntitySetAction(options) {
         if (action) {
             //get data object class
             var DataObjectClass = model.getDataObjectType();
-            var actionFunc = EdmMapping.hasOwnFunction(DataObjectClass,entityAction);
+            var actionFunc = EdmMapping.hasOwnAction(DataObjectClass,entityAction);
             if (typeof actionFunc !== 'function') {
-                return next(new Error('Invalid entity set configuration. The specified action cannot be found'))
+                return next(new Error('Invalid entity set configuration. The specified action cannot be found'));
             }
             var actionParameters = [];
             var parameters = _.filter(action.parameters, function(x) {
@@ -1217,6 +1151,55 @@ function postEntityAction(options) {
     };
 }
 
+/**
+ * @returns {Function}
+ */
+function getEntitySetIndex() {
+    return function(req, res, next) {
+        if (typeof req.context === 'undefined') {
+            return next();
+        }
+        /**
+         * get current model builder
+         * @type {ODataModelBuilder}
+         */
+        var builder = req.context.getApplication().getStrategy(ODataModelBuilder);
+        // get edm document
+        return builder.getEdm().then(function (result) {
+            return res.json({
+                value:result.entityContainer.entitySet
+            });
+        }).catch(function(err) {
+            return next(err);
+        });
+    };
+}
+
+/**
+ * @returns {Function}
+ */
+function getMetadataDocument() {
+    return function(req, res, next) {
+        if (typeof req.context === 'undefined') {
+            return next();
+        }
+        /**
+         * get current model builder
+         * @type {ODataModelBuilder}
+         */
+        var builder = req.context.getApplication().getStrategy(ODataModelBuilder);
+        // get edm document
+        return builder.getEdmDocument().then(function (result) {
+            res.set('Content-Type', 'application/xml');
+            return res.send(result.outerXML());
+        }).catch(function(err) {
+            return next(err);
+        });
+    };
+}
+
+module.exports.getEntitySetIndex = getEntitySetIndex;
+module.exports.getMetadataDocument = getMetadataDocument;
 module.exports.bindEntitySet = bindEntitySet;
 module.exports.getEntitySet = getEntitySet;
 module.exports.postEntitySet = postEntitySet;

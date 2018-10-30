@@ -9,6 +9,8 @@
 var express = require('express');
 var router = express.Router();
 
+var getEntitySetIndex = require("./middleware").getEntitySetIndex;
+var getMetadataDocument = require("./middleware").getMetadataDocument;
 var bindEntitySet = require("./middleware").bindEntitySet;
 var getEntitySet = require("./middleware").getEntitySet;
 var postEntitySet = require("./middleware").postEntitySet;
@@ -21,6 +23,12 @@ var getEntitySetFunction = require("./middleware").getEntitySetFunction;
 var postEntitySetAction = require("./middleware").postEntitySetAction;
 var getEntityFunction = require("./middleware").getEntityFunction;
 var postEntityAction = require("./middleware").postEntityAction;
+
+/* GET /  */
+router.get('/', getEntitySetIndex());
+
+/* GET /  */
+router.get('/\\$metadata', getMetadataDocument());
 
 /* GET /:entitySet  */
 router.get('/:entitySet', bindEntitySet(), getEntitySet());
@@ -40,6 +48,8 @@ router.get('/:entitySet/:entityFunction', bindEntitySet(), getEntitySetFunction(
 /* POST /:entitySet/:entityAction/  */
 router.post('/:entitySet/:entityAction', bindEntitySet(), postEntitySetAction());
 
+/* GET /:entitySet/:entityAction/  */
+router.get('/:entitySet/:entityFunction/:navigationProperty', bindEntitySet(), getEntitySetFunction());
 
 /* GET /:entitySet/:id/:entityFunction  */
 router.get('/:entitySet/:id/:entityFunction', bindEntitySet(), getEntityFunction());
@@ -47,8 +57,8 @@ router.get('/:entitySet/:id/:entityFunction', bindEntitySet(), getEntityFunction
 /* POST /:entitySet/:id/:entityAction  */
 router.post('/:entitySet/:id/:entityAction', bindEntitySet(), postEntityAction());
 
-/* GET /:entitySet/:entityAction/  */
-router.get('/:entitySet/:entityAction/:navigationProperty', bindEntitySet(), getEntitySetFunction());
+/* GET /:entitySet/:id/:navigationProperty  */
+router.get('/:entitySet/:id/:navigationProperty', bindEntitySet(), getEntityNavigationProperty());
 
 /* GET /:entitySet/:id  */
 router.get('/:entitySet/:id', bindEntitySet(), getEntity());
@@ -59,7 +69,5 @@ router.post('/:entitySet/:id', bindEntitySet(), postEntity());
 /* DELETE /:entitySet/:id deletes a data object by id. */
 router.delete('/:entitySet/:id', bindEntitySet(), deleteEntity());
 
-/* GET /:entitySet/:id/:navigationProperty  */
-router.get('/:entitySet/:id/:navigationProperty', bindEntitySet(), getEntityNavigationProperty());
 
 module.exports = router;

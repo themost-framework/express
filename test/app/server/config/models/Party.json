@@ -15,12 +15,6 @@
         "description": "A collection of contact points for a person or organization.",
         "type": "ContactPoint",
         "many":true
-    }, {
-        "name": "orders",
-        "title": "Orders",
-        "description": "A collection of orders made by the party (Persor or Organization).",
-        "type": "Order",
-        "many":true
     }], "privileges":[
     { "mask":15, "type":"global" },
     { "mask":1, "type":"global", "account":"*" }

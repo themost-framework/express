@@ -147,11 +147,6 @@
         "description": "Organizations that the person works for.",
         "type": "Organization",
         "many":true
-    },
-    {
-        "name": "orders",
-        "title": "Orders",
-        "type": "Order"
     }
 ], "eventListeners": [
 

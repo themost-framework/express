@@ -36,7 +36,15 @@ class Person extends Party {
     constructor() {
         super();
     }
-    @EdmMapping.func("lastOrder", Order)
+    
+    @EdmMapping.func("Me", "Person")
+    static getMe(context) {
+        return context.model('Person').filter('user eq me()').then(q => {
+           return Promise.resolve(q); 
+        });
+    }
+    
+    @EdmMapping.func("LastOrder", Order)
     getLastOrder() {
         return this.context.model('Order')
             .where('customer').equal(this.id)
@@ -44,8 +52,9 @@ class Person extends Party {
     }
     
     @EdmMapping.param('order', Order, false, true)
-    @EdmMapping.action("lastOrder", Order)
+    @EdmMapping.action("LastOrder", Order)
     setLastOrder(order) {
+        //do nothing
         return this.context.model('Order')
             .where('customer').equal(this.id)
             .orderByDescending('orderDate');
