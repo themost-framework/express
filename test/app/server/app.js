@@ -1,5 +1,6 @@
 import createError from 'http-errors';
 import express from 'express';
+import engine from 'ejs-locals';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
@@ -12,6 +13,8 @@ import {TextUtils} from '@themost/common';
 
 let app = express();
 
+// use ejs-locals for all ejs templates
+app.engine('ejs', engine);
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -71,7 +74,7 @@ passport.use(new BasicStrategy(
 app.use(sassMiddleware({
   src: path.join(__dirname, 'public'),
   dest: path.join(__dirname, 'public'),
-  indentedSyntax: true, // true = .sass and false = .scss
+  indentedSyntax: false, // true = .sass and false = .scss
   sourceMap: true
 }));
 app.use(express.static(path.join(__dirname, 'public')));
