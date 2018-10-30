@@ -8,7 +8,7 @@ import {ExpressDataApplication} from '../../../index';
 import passport from 'passport';
 import {BasicStrategy} from 'passport-http';
 import indexRouter from './routes/index';
-import serviceRouter from '../../../service';
+import {serviceRouter, dateReviver} from '../../../index';
 import {TextUtils} from '@themost/common';
 
 let app = express();
@@ -19,14 +19,8 @@ app.set('view engine', 'ejs');
 
 app.use(logger('dev'));
 
-const DateTimeRegex = /^\d{4}-([0]\d|1[0-2])-([0-2]\d|3[01])(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?([+-](\d+):(\d+))?$/;
 app.use(express.json({
-  reviver: (key, value) => {
-    if (typeof value === "string" && DateTimeRegex.test(value)) {
-        return new Date(value);
-    }
-    return value;
-  }
+  reviver: dateReviver 
 }));
 
 app.use(express.urlencoded({ extended: false }));

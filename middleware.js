@@ -16,6 +16,7 @@ var DataQueryable = require("@themost/data/data-queryable").DataQueryable;
 var parseBoolean = require('@themost/common/utils').LangUtils.parseBoolean;
 var HttpNotFoundError = require('@themost/common/errors').HttpNotFoundError;
 var HttpBadRequestError = require('@themost/common/errors').HttpBadRequestError;
+var HttpMethodNotAllowedError = require('@themost/common/errors').HttpMethodNotAllowedError;
 /**
  * Interface for options that may be passed to bindEntitySet middleware.
  *
@@ -45,12 +46,33 @@ var HttpBadRequestError = require('@themost/common/errors').HttpBadRequestError;
  /**
  * Gets or sets the name of the route parameter that holds the name of an entity set action
  * @property
- * @name EntitySetOptions#entityActionFrom
+ * @name EntitySetOptions#entitySetActionFrom
  * @returns string
  */
  
  /**
  * Gets or sets the name of the route parameter that holds the name of an entity set function
+ * @property
+ * @name EntitySetOptions#entitySetFunctionFrom
+ * @returns string
+ */
+ 
+ /**
+ * Gets or sets the name of the route parameter that holds the name of a navigation property
+ * @property
+ * @name EntitySetOptions#navigationPropertyFrom
+ * @returns string
+ */
+ 
+ /**
+ * Gets or sets the name of the route parameter that holds the name of an entity action
+ * @property
+ * @name EntitySetOptions#entityActionFrom
+ * @returns string
+ */
+ 
+ /**
+ * Gets or sets the name of the route parameter that holds the name of an entity function
  * @property
  * @name EntitySetOptions#entityFunctionFrom
  * @returns string
@@ -666,12 +688,13 @@ function getEntityNavigationProperty(options) {
 
 /**
  * Handles incoming GET requests against an entity's action  e.g. GET /api/people/me/
-  * @param {EntityOptions=} options
+  * @param {EntitySetOptions=} options
  * @returns {Function}
  */
 function getEntitySetFunction(options) {
     // assign defaults
     var opts = Object.assign({
+        entitySetFunctionFrom: 'entitySetFunction',
         entityFunctionFrom: 'entityFunction',
         navigationPropertyFrom: 'navigationProperty'
     }, options);
@@ -695,6 +718,7 @@ function getEntitySetFunction(options) {
     if (_.isNil(model)) {
         return next(new HttpNotFoundError("Entity not found"));
     }
+    var entitySetFunction = req.params[opts.entitySetFunctionFrom];
     var entityFunction = req.params[opts.entityFunctionFrom];
     var navigationProperty = req.params[opts.navigationPropertyFrom];
     /**
@@ -702,7 +726,7 @@ function getEntitySetFunction(options) {
      * @type {ODataModelBuilder}
      */
     var builder = req.context.getApplication().getStrategy(ODataModelBuilder);
-    var func = req.entitySet.entityType.collection.hasFunction(entityFunction);
+    var func = req.entitySet.entityType.collection.hasFunction(entitySetFunction);
     if (func) {
         var funcParameters = [];
         var parameters = _.filter(func.parameters, function(x) {
@@ -714,7 +738,7 @@ function getEntitySetFunction(options) {
         });
         //get data object class
         var DataObjectClass = model.getDataObjectType();
-        var staticFunc = EdmMapping.hasOwnFunction(DataObjectClass,entityFunction);
+        var staticFunc = EdmMapping.hasOwnFunction(DataObjectClass,entitySetFunction);
         if (staticFunc) {
             return Q.resolve(staticFunc(req.context)).then(function(result) {
                 var returnsCollection = _.isString(func.returnCollectionType);
@@ -729,9 +753,9 @@ function getEntitySetFunction(options) {
                     var returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
                     var filter = Q.nbind(returnModel.filter, returnModel);
                     if (!returnsCollection) {
-                        //pass context parameters (if navigationProperty is empty)
+                        //pass context parameters (if both navigationProperty and entityFunction are empty)
                         var params = {};
-                        if (_.isNil(navigationProperty)) {
+                        if (_.isNil(navigationProperty) && _.isNil(entityFunction)) {
                             params = _.pick(req.query, [
                                 "$select",
                                 "$expand"
@@ -754,6 +778,18 @@ function getEntitySetFunction(options) {
                                         entitySet: returnEntitySet.name,
                                         from: '_id',
                                         navigationPropertyFrom:'_navigationProperty'
+                                    })(req, res, next);
+                                }
+                                else if (_.isString(entityFunction)) {
+                                    //set internal identifier for object
+                                    req.params._id = result[returnModel.primaryKey];
+                                    //set internal entity function
+                                    req.params._entityFunction = entityFunction;
+                                    // call entity function middleware
+                                    return getEntityFunction({
+                                        entitySet: returnEntitySet.name,
+                                        from: '_id',
+                                        entityFunctionFrom: '_entityFunction'
                                     })(req, res, next);
                                 }
                                 return res.json(result);
@@ -825,6 +861,108 @@ function getEntitySetFunction(options) {
 }
 
 /**
+ * Handles incoming POST requests against an entity set function result  e.g. GET /api/people/me/lastOrder
+  * @param {EntitySetOptions=} options
+ * @returns {Function}
+ */
+function postEntitySetFunction(options) {
+    // assign defaults
+    var opts = Object.assign({
+        entitySetFunctionFrom: 'entitySetFunction',
+        entityActionFrom: 'entityAction'
+    }, options);
+    return function(req, res, next) {
+        if (typeof req.context === 'undefined') {
+            return next(new Error('Invalid request state. Request context is undefined.'));
+        }
+        // try to bind current request with the given entity set
+        if (opts.entitySet) {
+            req.entitySet = tryBindEntitySet(req, opts.entitySet);
+            // throw error if the given entity set cannot be found
+            if (typeof req.entitySet === 'undefined') {
+                return next(new HttpNotFoundError('The given entity set cannot be found'));
+            }
+        }
+        if (typeof req.entitySet === 'undefined') {
+            return next();
+        }
+        
+        var model = req.context.model(req.entitySet.entityType.name);
+        if (_.isNil(model)) {
+            return next(new HttpNotFoundError("Entity not found"));
+        }
+        var entitySetFunction = req.params[opts.entitySetFunctionFrom];
+        var entityAction = req.params[opts.entityActionFrom];
+        /**
+         * get current model builder
+         * @type {ODataModelBuilder}
+         */
+        var builder = req.context.getApplication().getStrategy(ODataModelBuilder);
+        var func = req.entitySet.entityType.collection.hasFunction(entitySetFunction);
+        if (func) {
+            // get return collection flag
+            var returnsCollection = _.isString(func.returnCollectionType);
+            if (returnsCollection) {
+                // throw exception for invalid entity function result
+                return next(new HttpMethodNotAllowedError('Invalid entity set function configuration. An entity function must return an entity at this context.'));
+            }
+            var funcParameters = [];
+            var parameters = _.filter(func.parameters, function(x) {
+                return x.name !== 'bindingParameter';
+            });
+            // add other parameters by getting request body attributes
+            _.forEach(parameters, function(x) {
+                funcParameters.push(req.query[x.name]);
+            });
+            //get data object class
+            var DataObjectClass = model.getDataObjectType();
+            var staticFunc = EdmMapping.hasOwnFunction(DataObjectClass,entitySetFunction);
+            if (staticFunc) {
+                // validate entityAction
+                if (_.isNil(entityAction)) {
+                    // do nothing
+                    return next();
+                }
+                return Q.resolve(staticFunc(req.context)).then(function(result) {
+                    if (result instanceof DataQueryable) {
+                        // get return model (if any)
+                        var returnModel = req.context.model(func.returnType || func.returnCollectionType);
+                        // throw exception for unknown model
+                        if (_.isNil(returnModel)) {
+                            return Q.reject(new HttpNotFoundError("Result Entity not found"));
+                        }
+                        // get return entity set
+                        var returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
+                        // get item
+                        return result.getItem().then(function(result) {
+                            if (_.isNil(result)) {
+                                return next(new HttpNotFoundError());
+                            }
+                            //set internal identifier for object
+                            req.params._id = result[returnModel.primaryKey];
+                            //set internal entity function
+                            req.params._entityAction = entityAction;
+                            // call entity function middleware
+                            return postEntityAction({
+                                entitySet: returnEntitySet.name,
+                                from: '_id',
+                                entityActionFrom: '_entityAction'
+                            })(req, res, next);
+                        });
+                    }
+                }).catch((function(err) {
+                    return next(err);
+                }));
+            }
+            // an entity set function method with the specified name was not found, throw error
+            return next(new Error('The specified entity set function cannot be found'));
+        }
+        // an entity set function was not found, continue
+        return next();    
+    };
+}
+
+/**
  * Handles incoming POST requests against an entity set action  e.g. GET /api/people/me/
   * @param {EntityOptions=} options
  * @returns {Function}
@@ -832,6 +970,7 @@ function getEntitySetFunction(options) {
 function postEntitySetAction(options) {
     // assign defaults
     var opts = Object.assign({
+        entitySetActionFrom: 'entitySetAction',
         entityActionFrom: 'entityAction'
     }, options);
     return function(req, res, next) {
@@ -853,12 +992,12 @@ function postEntitySetAction(options) {
         if (_.isNil(model)) {
             return next(new HttpNotFoundError("Entity not found"));
         }
-        var entityAction = req.params[opts.entityActionFrom];
-        var action = req.entitySet.entityType.collection.hasAction(entityAction);
+        var entitySetAction = req.params[opts.entitySetActionFrom];
+        var action = req.entitySet.entityType.collection.hasAction(entitySetAction);
         if (action) {
             //get data object class
             var DataObjectClass = model.getDataObjectType();
-            var actionFunc = EdmMapping.hasOwnAction(DataObjectClass,entityAction);
+            var actionFunc = EdmMapping.hasOwnAction(DataObjectClass,entitySetAction);
             if (typeof actionFunc !== 'function') {
                 return next(new Error('Invalid entity set configuration. The specified action cannot be found'));
             }
@@ -933,7 +1072,8 @@ function getEntityFunction(options) {
     // assign defaults
     var opts = Object.assign({
         from: 'id',
-        entityFunctionFrom: 'entityFunction'
+        entityFunctionFrom: 'entityFunction',
+        navigationPropertyFrom: 'navigationProperty'
     }, options);
     
     return function(req, res, next) {
@@ -1209,6 +1349,7 @@ module.exports.postEntity = postEntity;
 module.exports.deleteEntity = deleteEntity;
 module.exports.getEntityNavigationProperty = getEntityNavigationProperty;
 module.exports.getEntitySetFunction = getEntitySetFunction;
+module.exports.postEntitySetFunction = postEntitySetFunction;
 module.exports.postEntitySetAction = postEntitySetAction;
 module.exports.getEntityFunction = getEntityFunction;
 module.exports.postEntityAction = postEntityAction;

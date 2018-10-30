@@ -20,6 +20,7 @@ var postEntity = require("./middleware").postEntity;
 var deleteEntity = require("./middleware").deleteEntity;
 var getEntityNavigationProperty = require("./middleware").getEntityNavigationProperty;
 var getEntitySetFunction = require("./middleware").getEntitySetFunction;
+var postEntitySetFunction = require("./middleware").postEntitySetFunction;
 var postEntitySetAction = require("./middleware").postEntitySetAction;
 var getEntityFunction = require("./middleware").getEntityFunction;
 var postEntityAction = require("./middleware").postEntityAction;
@@ -42,14 +43,20 @@ router.put('/:entitySet', bindEntitySet(), postEntitySet());
 /* DELETE /:entitySet removes a data object or an array of data objects. */
 router.delete('/:entitySet', bindEntitySet(), deleteEntitySet());
 
-/* GET /:entitySet/:entityAction/  */
-router.get('/:entitySet/:entityFunction', bindEntitySet(), getEntitySetFunction());
+/* GET /:entitySet/:entitySetFunction/  */
+router.get('/:entitySet/:entitySetFunction', bindEntitySet(), getEntitySetFunction());
 
-/* POST /:entitySet/:entityAction/  */
-router.post('/:entitySet/:entityAction', bindEntitySet(), postEntitySetAction());
+/* POST /:entitySet/:entitySetAction/  */
+router.post('/:entitySet/:entitySetAction', bindEntitySet(), postEntitySetAction());
 
-/* GET /:entitySet/:entityAction/  */
-router.get('/:entitySet/:entityFunction/:navigationProperty', bindEntitySet(), getEntitySetFunction());
+/* GET /:entitySet/:entitySetFunction/:entityFunction  */
+router.get('/:entitySet/:entitySetFunction/:entityFunction', bindEntitySet(), getEntitySetFunction());
+
+/* GET /:entitySet/:entitySetFunction/:entityAction  */
+router.post('/:entitySet/:entitySetFunction/:entityAction', bindEntitySet(), postEntitySetFunction());
+
+/* GET /:entitySet/:entitySetFunction/:navigationProperty  */
+router.get('/:entitySet/:entitySetFunction/:navigationProperty', bindEntitySet(), getEntitySetFunction());
 
 /* GET /:entitySet/:id/:entityFunction  */
 router.get('/:entitySet/:id/:entityFunction', bindEntitySet(), getEntityFunction());
@@ -68,6 +75,5 @@ router.post('/:entitySet/:id', bindEntitySet(), postEntity());
 
 /* DELETE /:entitySet/:id deletes a data object by id. */
 router.delete('/:entitySet/:id', bindEntitySet(), deleteEntity());
-
 
 module.exports = router;
