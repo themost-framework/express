@@ -9,23 +9,23 @@ MOST Data ORM Extension for ExpressJS
 
 Install @themost/cli globally
 
-  npm i @themost/cli -g
+    npm i @themost/cli -g
 
 Generate a new project by executing the following command:
 
-  themost new project my-app  --template express
+    themost new project my-app  --template express
 
 Go to project's directory:
 
-  cd my-app
+    cd my-app
   
 Install dependencies:
 
-  npm i
+    npm i
   
 and serve the new application by executing:
 
-  npm serve
+    npm serve
   
 Open your browser and navigate to http://127.0.0.1:3000
     
