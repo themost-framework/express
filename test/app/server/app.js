@@ -4,11 +4,10 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import sassMiddleware from 'node-sass-middleware';
-import {ExpressDataApplication} from '../../../index';
+import {ExpressDataApplication, serviceRouter, dateReviver} from '../../../index';
 import passport from 'passport';
 import {BasicStrategy} from 'passport-http';
 import indexRouter from './routes/index';
-import {serviceRouter, dateReviver} from '../../../index';
 import {TextUtils} from '@themost/common';
 
 let app = express();

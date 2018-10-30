@@ -4,6 +4,7 @@
     "description": "The most generic type of item.",
     "title": "Thing",
     "abstract": false,
+    "hidden": true,
     "sealed": false,
     "version": "2.0",
     "fields": [

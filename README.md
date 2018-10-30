@@ -9,16 +9,23 @@ MOST Data ORM Extension for ExpressJS
 
 Use @themost/data application as an express middleware:
 
-    var ExpressDataApplication = require("@themost/express").ExpressDataApplication;
+    import express from 'express';
+    import path from 'path';
+    import {ExpressDataApplication, serviceRouter, dateReviver} from '@themost/express';
+    let app = express();
     // data application setup
-    var dataApplication = new ExpressDataApplication(path.resolve(__dirname, 'config'));
+    let dataApplication = new ExpressDataApplication(path.resolve(__dirname, 'config'));
+    // use @themost/express dateReviver helper function for parsing dates
+    app.use(express.json({
+      reviver: dateReviver 
+    }));
     // use data application middleware
     app.use(dataApplication.middleware());
     
-Use the api router for serving all the available data models:
+Use the service router for serving all the available data models:
     
-    var apiRouter = require('@themost/express/api');
-    app.use('/api', passport.authenticate('bearer', { session: false }), apiRouter);
+    var serviceRouter = require('@themost/express').serviceRouter;
+    app.use('/api', passport.authenticate('bearer', { session: false }), serviceRouter);
     
 or use the traditional way of serving data:
 
