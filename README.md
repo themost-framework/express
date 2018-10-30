@@ -25,7 +25,7 @@ Install dependencies:
   
 and serve the new application by executing:
 
-    npm serve
+    npm run serve
   
 Open your browser and navigate to http://127.0.0.1:3000
     
