@@ -153,6 +153,9 @@ ExpressDataApplication.prototype.middleware = function() {
       Object.defineProperty(context, 'user', {
         get: function() {
           return req.user;
+        },
+        set: function(value) {
+          req.user = value;
         }
       });
       /**
