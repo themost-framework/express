@@ -8,7 +8,7 @@
  */
  
  import {Router} from 'express';
- 
- declare ServiceRouter: Router;
- 
- export = ServiceRouter;
+
+ declare const serviceRouter: Router;
+
+ export = serviceRouter;
