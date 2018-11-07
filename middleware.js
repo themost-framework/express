@@ -561,51 +561,13 @@ function getEntityNavigationProperty(options) {
             var key = obj[thisModel.primaryKey];
             //get mapping
             var mapping = thisModel.inferMapping(navigationProperty);
+            // if mapping is undefined exit
+            if (_.isNil(mapping)) {
+                return next();
+            }
             //get count parameter
             var count = req.query.hasOwnProperty('$inlinecount') ? parseBoolean(req.query.$inlinecount) : (req.query.hasOwnProperty('$count') ? parseBoolean(req.query.$count) : false);
-            if (_.isNil(mapping)) {
-                //try to find associated model
-                //get singular model name
-                var otherModelName = pluralize.singular(navigationProperty);
-                //search for model with this name
-                var otherModel = req.context.model(otherModelName);
-                if (otherModel) {
-                    var otherFields = _.filter(otherModel.attributes, function(x) {
-                        return x.type === thisModel.name;
-                    });
-                    // if there are more than one fields that may define an association with the other model
-                    if (otherFields.length > 1) {
-                        // exit
-                        return next();
-                    }
-                    // get first attribute
-                    var otherField = otherFields[0];
-                    // validate mapping
-                    mapping = otherModel.inferMapping(otherField.name);
-                    if (mapping && mapping.associationType === 'junction') {
-                        var attr;
-                        //search model for attribute that has an association of type junction with child model
-                        if (mapping.parentModel === otherModel.name) {
-                            attr = _.find(otherModel.attributes, function(x) {
-                                return x.name === otherField.name;
-                            });
-                        }
-                        else {
-                            attr = _.find(thisModel.attributes, function(x) {
-                                return x.type === otherModel.name;
-                            });
-                        }
-                        if (attr) {
-                            thisModel = attr.name;
-                            mapping = thisModel.inferMapping(attr.name);
-                        }
-                    }
-                }
-                // if mapping is undefined exit
-                if (_.isNil(mapping)) {
-                    return next();
-                }
-            }
+            // validate mapping
             if (mapping.associationType === 'junction') {
                 /**
                  * @type {DataQueryable}

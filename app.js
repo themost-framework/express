@@ -10,6 +10,7 @@ var path = require("path");
 var Q = require("q");
 var Symbol = require("symbol");
 var LangUtils = require("@themost/common").LangUtils;
+var Args = require("@themost/common").Args;
 var IApplication = require("@themost/common/app").IApplication;
 var DefaultDataContext = require("@themost/data/data-context").DefaultDataContext;
 var ConfigurationBase = require("@themost/common/config").ConfigurationBase;
@@ -46,7 +47,8 @@ LangUtils.inherits(ExpressDataApplication, IApplication);
  */
 // eslint-disable-next-line no-unused-vars
 ExpressDataApplication.prototype.useStrategy = function(serviceCtor, strategyCtor) {
-    return this[configurationProperty].useStrategy(serviceCtor, strategyCtor);
+    this[configurationProperty].useStrategy(serviceCtor, strategyCtor);
+    return this;
 };
 /**
  * Returns the instance of ODataModelBuilder strategy which has been activated for this application
@@ -71,6 +73,7 @@ ExpressDataApplication.prototype.getBuilder = function() {
 }
 
 /**
+ * Checks if the current application has a strategy of the given type
 * @param {Function} serviceCtor
 * @returns {boolean}
 */
@@ -103,6 +106,34 @@ ExpressDataApplication.prototype.createContext = function() {
     let context = new ExpressDataContext(this.getConfiguration());
     context[applicationProperty] = this;
     return context;
+};
+
+/**
+ * Gets an application service based on the given base service type
+ * @param {Function} serviceCtor
+ * @return {*}
+ */
+ExpressDataApplication.prototype.getService = function(serviceCtor) {
+    return this.getStrategy(serviceCtor);
+};
+
+/**
+ * Checks if the current application has a strategy of the given type
+ * @param {Function} serviceCtor
+ * @return {boolean}
+ */
+ExpressDataApplication.prototype.hasService = function(serviceCtor) {
+    return this.hasStrategy(serviceCtor);
+};
+
+/**
+ * Registers an application service e.g. a singleton service which is going to be used in application context
+ * @param {Function} serviceCtor
+ * @returns ExpressDataApplication
+ */
+// eslint-disable-next-line no-unused-vars
+ExpressDataApplication.prototype.useService = function(serviceCtor) {
+    return this.useStrategy(serviceCtor, serviceCtor);
 };
 
 /**
