@@ -52,3 +52,21 @@
  export declare function postEntitySet(options?: EntitySetOptions): RequestHandler;
  
  export declare function deleteEntitySet(options?: EntitySetOptions): RequestHandler;
+ 
+ export declare function getEntity(options?: EntityOptions): RequestHandler;
+ 
+ export declare function postEntity(options?: EntityOptions): RequestHandler;
+ 
+ export declare function deleteEntity(options?: EntityOptions): RequestHandler;
+ 
+ export declare function getEntityNavigationProperty(options?: EntityOptions): RequestHandler;
+ 
+ export declare function getEntitySetFunction(options?: EntitySetOptions): RequestHandler;
+ 
+ export declare function postEntitySetFunction(options?: EntitySetOptions): RequestHandler;
+ 
+ export declare function postEntitySetAction(options?: EntitySetOptions): RequestHandler;
+ 
+ export declare function getEntityFunction(options?: EntityOptions): RequestHandler;
+ 
+ export declare function postEntityAction(options?: EntityOptions): RequestHandler;
