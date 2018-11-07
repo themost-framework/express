@@ -10,7 +10,6 @@ var path = require("path");
 var Q = require("q");
 var Symbol = require("symbol");
 var LangUtils = require("@themost/common").LangUtils;
-var Args = require("@themost/common").Args;
 var IApplication = require("@themost/common/app").IApplication;
 var DefaultDataContext = require("@themost/data/data-context").DefaultDataContext;
 var ConfigurationBase = require("@themost/common/config").ConfigurationBase;
@@ -18,6 +17,7 @@ var DataConfigurationStrategy = require("@themost/data/data-configuration").Data
 var DataConfiguration = require("@themost/data/data-configuration").DataConfiguration;
 var ODataConventionModelBuilder = require("@themost/data/odata").ODataConventionModelBuilder;
 var ODataModelBuilder = require("@themost/data/odata").ODataModelBuilder;
+var ServicesConfiguration = require("./app-services-configuration").ServicesConfiguration;
 
 
 let configurationProperty = Symbol('configuration');
@@ -30,12 +30,14 @@ let applicationProperty = Symbol('application');
 function ExpressDataApplication(configurationPath) {
   
     ExpressDataApplication.super_.bind(this)();
-  // initialize @themost/data configuration
+    // initialize @themost/data configuration
     this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath));
     // use default data configuration strategy
     this[configurationProperty].useStrategy(DataConfigurationStrategy, DataConfigurationStrategy);
     // use default model builder
     this.useModelBuilder();
+    // register configuration services
+    ServicesConfiguration.config(this);
 }
 LangUtils.inherits(ExpressDataApplication, IApplication);
 

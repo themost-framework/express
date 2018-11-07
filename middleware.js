@@ -8,7 +8,6 @@
  */
  var _ = require("lodash");
 var Q = require("q");
-var pluralize = require("pluralize");
 var ODataModelBuilder = require("@themost/data/odata").ODataModelBuilder;
 var EdmMapping = require("@themost/data/odata").EdmMapping;
 var LangUtils = require("@themost/common/utils").LangUtils;
