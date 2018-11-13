@@ -10,6 +10,7 @@ import passport from 'passport';
 import {BasicStrategy} from 'passport-http';
 import indexRouter from './routes/index';
 import {TextUtils} from '@themost/common';
+import i18n from 'i18n';
 
 let app = express();
 
@@ -27,6 +28,14 @@ app.use(express.json({
 
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+// configure i18n
+i18n.configure({
+    locales:['en', 'el'],
+    defaultLocale: 'el',
+    directory: path.resolve(process.cwd(), 'locales')
+});
+// use i18n
+app.use(i18n.init);
 // data context setup
 const dataApplication = new ExpressDataApplication(path.resolve(__dirname, 'config'));
 // use data middleware (register req.context)

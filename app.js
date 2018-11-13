@@ -22,6 +22,7 @@ var ServicesConfiguration = require("./app-services-configuration").ServicesConf
 
 let configurationProperty = Symbol('configuration');
 let applicationProperty = Symbol('application');
+let unattendedProperty = Symbol('unattended');
 /**
  * @class
  * @implements IApplication
@@ -241,6 +242,79 @@ ExpressDataContext.prototype.getStrategy = function(strategyCtor) {
  */ 
 ExpressDataContext.prototype.getApplication = function() {
     return this[applicationProperty];
+};
+
+/**
+ * @callback ExpressDataContext~unattendedCallable
+ * @param {ExpressDataApplication~executeCallback} cb
+ */
+ 
+ /**
+ * @callback ExpressDataContext~unattendedCallback
+ * @param {Error=} err
+ * @param {*=} value
+ */
+
+/**
+ * Executes the specified callable in unattended mode.
+ * @param {ExpressDataContext~unattendedCallable} callable
+ * @param {ExpressDataContext~unattendedCallback} callback
+ */
+ExpressDataContext.prototype.unattended = function(callable, callback) {
+    var self = this;
+    var interactiveUser;
+    if (typeof callback !== 'function') {
+        throw new Error('Invalid argument. Unattended callback must be a function.');
+    }
+    if (typeof callable !== 'function') {
+        return callback(new Error('Invalid argument. Unattended callable must be a function.'));
+    }
+    // if context is already in attended mode execute callable
+    if (self[unattendedProperty]) {
+        try {
+            return callable.bind(self)(function(err, result) {
+                return callback(err, result);
+            });
+        }
+        catch(err) {
+            return callback(err);
+        }
+    }
+    // get unattended execution account
+    var account = self.getConfiguration().getSource('settings/auth/unattendedExecutionAccount');
+    // get interactive user
+    if (self.user) {
+        interactiveUser = Object.assign({}, self.user);
+        // set interactive user
+        self.interactiveUser = interactiveUser;
+    }
+    if (account) {
+        self.user = { name:account, authenticationType:'Basic' };
+    }
+    try {
+      // set unattended flag
+        self[unattendedProperty] = true;
+        return callable.bind(self)(function(err, result) {
+            //restore user
+            if (interactiveUser) {
+                self.user = Object.assign({ }, interactiveUser);
+            }
+            delete self.interactiveUser;
+            delete self[unattendedProperty];
+            return callback(err, result);
+        });
+    }
+    catch(err) {
+        // restore user
+        if (interactiveUser) {
+            self.user = Object.assign({ }, interactiveUser);
+        }
+        // delete temporary interactive user
+        delete self.interactiveUser;
+        // delete unattended flag
+        delete self._unattended;
+        return callback(err);
+    }
 };
 
 module.exports.ExpressDataContext = ExpressDataContext;

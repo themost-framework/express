@@ -35,9 +35,52 @@
      createContext(): ExpressDataContext;
     
      execute(callback: Function, callback: Faunction);
+ 
+ }
+ /**
+  * Holds user information of a data context
+  */ 
+ export interface AuthenticatedUser {
+   /**
+    * Gets or sets a string which represents the name of the user
+    */ 
+   name: string,
+   /**
+    * Gets or sets a string which represents the current authentication type e.g. Basic, Bearer, None etc
+    */ 
+   authenticationType?: string;
+   /**
+    * Gets or sets a string which represents a token associated with this user
+    */ 
+   authenticationToken?: string;
+   /**
+    * Gets or sets a scope if current authentication type is associated with scopes like OAuth2 authentication
+    */ 
+   authenticationScope?: string;
+   /**
+    * Gets or sets a key returned by authentication provider and identifies this user e.g. The id of the user
+    */ 
+   authenticationProviderKey?: any;
+ }
+ /**
+  * Holds user information when a data context is in unattended mode
+  */ 
+ export interface InteractiveUser {
+  /**
+    * Gets or sets a string which represents the name of the user
+    */ 
+   name: string,
+   /**
+    * Gets or sets a string which represents the current authentication type e.g. Basic, Bearer, None etc
+    */ 
+   authenticationType?: string;
  }
  
  export declare class ExpressDataContext extends DefaultDataContext {
+     
+     interactiveUser?: InteractiveUser;
+     
+     user?: AuthenticatedUser;
      
      getConfiguration(): ConfigurationBase;
      
