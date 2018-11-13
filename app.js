@@ -281,7 +281,7 @@ ExpressDataContext.prototype.unattended = function(callable, callback) {
         }
     }
     // get unattended execution account
-    var account = self.getConfiguration().getSource('settings/auth/unattendedExecutionAccount');
+    var account = self.getConfiguration().getSourceAt('settings/auth/unattendedExecutionAccount');
     // get interactive user
     if (self.user) {
         interactiveUser = Object.assign({}, self.user);
