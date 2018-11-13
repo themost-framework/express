@@ -214,9 +214,21 @@ ExpressDataApplication.prototype.middleware = function() {
       return next();
   };
 };
+
 /**
- * Enables passport basic authorization based on @themost/data user management
- */ 
+ * Converts an application URL into one that is usable on the requesting client. A valid application relative URL always start with "~/".
+ * If the relativeUrl parameter contains an absolute URL, the URL is returned unchanged.
+ * Note: An HTTP application base path may be set in settings/app/base configuration section. The default value is "/".
+ * @param {string} appRelativeUrl - A string which represents an application relative URL like ~/login
+ */
+ExpressDataApplication.prototype.resolveUrl = function (appRelativeUrl) {
+    if (/^~\//.test(appRelativeUrl)) {
+        var base = this.getConfiguration().getSourceAt("settings/app/base") || "/";
+        base += /\/$/.test(base) ? '' : '/';
+        return appRelativeUrl.replace(/^~\//, base);
+    }
+    return appRelativeUrl;
+};
 
 /**
  * @class
