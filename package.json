@@ -1,6 +1,6 @@
 {
   "name": "@themost/express",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "MOST Data ORM Express Middleware",
   "main": "index.js",
   "scripts": {
@@ -35,5 +35,29 @@
     "pluralize": "^7.0.0",
     "q": "^1.5.1",
     "symbol": "^0.3.1"
-  }
+  },
+    "eslintConfig": {
+        "env": {
+            "browser": true,
+            "node": true,
+            "es6": false,
+            "jquery": true
+        },
+        "globals": {
+            "describe": false,
+            "it": false
+        },
+        "extends": "eslint:recommended",
+        "rules": {
+            "no-console": "warn",
+            "no-invalid-this": "warn",
+            "no-undef": "error",
+            "no-unused-vars": "warn",
+            "no-var": "off",
+            "strict": [
+                2,
+                "never"
+            ]
+        }
+    }
 }
