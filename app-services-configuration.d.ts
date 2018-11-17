@@ -14,5 +14,5 @@ export declare interface ServiceConfigurationElement {
 }
 
 export declare class ServicesConfiguration {
-    config(app: IApplication);
+    config(app: ExpressDataApplication);
 }

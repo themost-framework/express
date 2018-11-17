@@ -7,10 +7,9 @@
  * found in the LICENSE file at https://themost.io/license
  */
 var path = require("path");
-var Q = require("q");
 var Symbol = require("symbol");
 var LangUtils = require("@themost/common").LangUtils;
-var IApplication = require("@themost/common/app").IApplication;
+var Args = require("@themost/common").Args;
 var DefaultDataContext = require("@themost/data/data-context").DefaultDataContext;
 var ConfigurationBase = require("@themost/common/config").ConfigurationBase;
 var DataConfigurationStrategy = require("@themost/data/data-configuration").DataConfigurationStrategy;
@@ -20,17 +19,18 @@ var ODataModelBuilder = require("@themost/data/odata").ODataModelBuilder;
 var ServicesConfiguration = require("./app-services-configuration").ServicesConfiguration;
 
 
-let configurationProperty = Symbol('configuration');
-let applicationProperty = Symbol('application');
-let unattendedProperty = Symbol('unattended');
+var configurationProperty = Symbol('configuration');
+var applicationProperty = Symbol('application');
+var unattendedProperty = Symbol('unattended');
+var servicesProperty = Symbol('services');
 /**
  * @class
- * @implements IApplication
  * @param {string} configurationPath - The configuration directory path
  */ 
 function ExpressDataApplication(configurationPath) {
-  
-    ExpressDataApplication.super_.bind(this)();
+
+    //initialize services
+    this[servicesProperty] = { };
     // initialize @themost/data configuration
     this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath));
     // use default data configuration strategy
@@ -39,8 +39,9 @@ function ExpressDataApplication(configurationPath) {
     this.useModelBuilder();
     // register configuration services
     ServicesConfiguration.config(this);
+
 }
-LangUtils.inherits(ExpressDataApplication, IApplication);
+
 
 /**
  * Registers an application strategy e.g. a singleton service which is going to be used in application context
@@ -50,7 +51,9 @@ LangUtils.inherits(ExpressDataApplication, IApplication);
  */
 // eslint-disable-next-line no-unused-vars
 ExpressDataApplication.prototype.useStrategy = function(serviceCtor, strategyCtor) {
-    this[configurationProperty].useStrategy(serviceCtor, strategyCtor);
+    Args.notFunction(strategyCtor,"Service constructor");
+    Args.notFunction(strategyCtor,"Strategy constructor");
+    this[servicesProperty][serviceCtor.name] = new strategyCtor(this);
     return this;
 };
 /**
@@ -59,7 +62,7 @@ ExpressDataApplication.prototype.useStrategy = function(serviceCtor, strategyCto
  */ 
 ExpressDataApplication.prototype.useModelBuilder = function() {
     // initialize data model builder
-    let builder = new ODataConventionModelBuilder(new DataConfiguration(this.getConfiguration().getConfigurationPath()));
+    var builder = new ODataConventionModelBuilder(new DataConfiguration(this.getConfiguration().getConfigurationPath()));
     // initialize model builder
     builder.initializeSync();
     // use model convention builder
@@ -73,7 +76,7 @@ ExpressDataApplication.prototype.useModelBuilder = function() {
  */ 
 ExpressDataApplication.prototype.getBuilder = function() {
   return this.getStrategy(ODataModelBuilder);
-}
+};
 
 /**
  * Checks if the current application has a strategy of the given type
@@ -82,7 +85,8 @@ ExpressDataApplication.prototype.getBuilder = function() {
 */
 // eslint-disable-next-line no-unused-vars
 ExpressDataApplication.prototype.hasStrategy = function(serviceCtor) {
-    return this[configurationProperty].hasStrategy(serviceCtor);
+    Args.notFunction(serviceCtor,"Service constructor");
+    return this[servicesProperty].hasOwnProperty(serviceCtor.name);
 };
 
 /**
@@ -92,7 +96,8 @@ ExpressDataApplication.prototype.hasStrategy = function(serviceCtor) {
  */
 // eslint-disable-next-line no-unused-vars
 ExpressDataApplication.prototype.getStrategy = function(serviceCtor) {
-    return this[configurationProperty].getStrategy(serviceCtor);
+    Args.notFunction(serviceCtor,"Service constructor");
+    return this[servicesProperty][serviceCtor.name];
 };
 /**
  * @returns {ConfigurationBase}
@@ -106,7 +111,7 @@ ExpressDataApplication.prototype.getConfiguration = function() {
  * @returns {ExpressDataContext}
  */
 ExpressDataApplication.prototype.createContext = function() {
-    let context = new ExpressDataContext(this.getConfiguration());
+    var context = new ExpressDataContext(this.getConfiguration());
     context[applicationProperty] = this;
     return context;
 };
@@ -159,7 +164,7 @@ ExpressDataApplication.prototype.useService = function(serviceCtor) {
  */ 
 ExpressDataApplication.prototype.execute = function(callable, callback) {
   // create context
-  let context = this.createContext();
+  var context = this.createContext();
   //execute callable function with the context as parameter
   return callable(context, function (err, value) {
       // finalize data context
@@ -175,7 +180,7 @@ ExpressDataApplication.prototype.middleware = function() {
   var thisApp = this;
   return function dataContextMiddleware(req, res, next) {
       
-      let context = new ExpressDataContext(thisApp.getConfiguration());
+      var context = new ExpressDataContext(thisApp.getConfiguration());
       // define application property
       context[applicationProperty] = thisApp;
       /**
@@ -206,7 +211,7 @@ ExpressDataApplication.prototype.middleware = function() {
         //on end
         if (req.context) {
           //finalize data context
-          return req.context.finalize(()=> {
+          return req.context.finalize( function() {
             //
           });
         }
@@ -324,7 +329,7 @@ ExpressDataContext.prototype.unattended = function(callable, callback) {
         // delete temporary interactive user
         delete self.interactiveUser;
         // delete unattended flag
-        delete self._unattended;
+        delete self[unattendedProperty];
         return callback(err);
     }
 };

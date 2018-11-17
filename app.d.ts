@@ -12,7 +12,7 @@
  import {DefaultDataContext} from '@themost/data/data-context';
  import {ConfigurationBase} from '@themost/common/config';
  
- export declare class ExpressDataApplication extends IApplication {
+ export declare class ExpressDataApplication implements IApplication {
      
      constructor(configurationPath: string);
      
@@ -20,21 +20,23 @@
      
      getBuilder(): ODataModelBuilder;
      
-     useStrategy(serviceCtor: Function, strategyCtor: Function): ExpressDataApplication;
+     useStrategy(serviceCtor: void, strategyCtor: void): IApplication;
      
      useService(serviceCtor: Function): ExpressDataApplication;
     
-     hasStrategy(serviceCtor: Function): boolean;
+     hasStrategy(serviceCtor: void): boolean;
     
      hasService(serviceCtor: Function): boolean;
     
-     getStrategy(serviceCtor: Function): any;
+     getStrategy(serviceCtor: void): any;
     
      getService(serviceCtor: Function): any;
     
      createContext(): ExpressDataContext;
     
-     execute(callback: Function, callback: Faunction);
+     execute(callable: Function, callback: Function);
+
+     getConfiguration(): ConfigurationBase;
  
  }
  /**

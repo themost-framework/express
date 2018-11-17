@@ -38,7 +38,7 @@ function ServicesConfiguration() {
  *      ]
  * }
  *
- * @param {IApplication} app
+ * @param {ExpressDataApplication} app
  */
 ServicesConfiguration.config = function(app) {
     /**
