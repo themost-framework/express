@@ -5,12 +5,13 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import sassMiddleware from 'node-sass-middleware';
-import {ExpressDataApplication, serviceRouter, dateReviver} from '../../../index';
+import {ExpressDataApplication, serviceRouter, dateReviver} from '@themost/express';
 import passport from 'passport';
 import {BasicStrategy} from 'passport-http';
 import indexRouter from './routes/index';
 import {TextUtils} from '@themost/common';
 import i18n from 'i18n';
+import onHeaders from 'on-headers'
 
 let app = express();
 
@@ -89,7 +90,17 @@ app.use(sassMiddleware({
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/api', passport.authenticate('basic', { session: false }), serviceRouter);
+// noinspection JSCheckFunctionSignatures
+app.use('/api', passport.authenticate('basic', { session: false }), (req, res, next) => {
+    onHeaders(res, ()=> {
+       // disable caching
+       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+       res.setHeader('Pragma', 'no-cache');
+       res.setHeader('Expires', 0);
+       res.removeHeader('ETag');
+    });
+    return next();
+}, serviceRouter);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
