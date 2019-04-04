@@ -77,14 +77,20 @@ ServicesConfiguration.config = function(app) {
                 else {
                     ServiceCtor = app.getConfiguration().getStrategy(ModuleLoaderStrategy).require(x.serviceType);
                 }
-                app.useStrategy(StrategyCtor, ServiceCtor);
+                // if strategy is not defined
+                if (StrategyCtor == null) {
+                    // use service
+                    app.useService(ServiceCtor);
+                }
+                else {
+                    // otherwise use strategy
+                    app.useStrategy(ServiceCtor, StrategyCtor);
+                }
+
+
         });
     }
 };
 
-
-if (typeof exports !== 'undefined')
-{
-    module.exports.ServiceConfigurationElement = ServiceConfigurationElement;
-    module.exports.ServicesConfiguration = ServicesConfiguration;
-}
+module.exports.ServiceConfigurationElement = ServiceConfigurationElement;
+module.exports.ServicesConfiguration = ServicesConfiguration;
