@@ -1,0 +1,112 @@
+{
+  "name": "express-server-project",
+  "version": "0.1.0",
+  "description": "Express Application with MOST Web Framework",
+  "main": "dist/server/server.js",
+  "repository": "",
+  "private": true,
+  "author": "",
+  "scripts": {
+    "start": "node bin/www.js",
+    "clean": "rimraf dist/server",
+    "build": "rimraf dist/server && babel server --out-dir dist/server --copy-files --source-maps",
+    "themost": "themost",
+    "serve": "nodemon bin/www.js",
+    "debug": "nodemon --inspect-brk bin/www.js",
+    "test": "mocha --exit --require @babel/register server/test/*.spec.js"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.2",
+    "@babel/core": "^7.1.2",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/plugin-proposal-decorators": "^7.1.0",
+    "@babel/plugin-proposal-export-default-from": "^7.0.0",
+    "@babel/plugin-proposal-export-namespace-from": "^7.0.0",
+    "@babel/plugin-transform-async-to-generator": "^7.1.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.1.0",
+    "@babel/plugin-transform-strict-mode": "^7.0.0",
+    "@babel/plugin-transform-typeof-symbol": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "@babel/runtime": "^7.1.2",
+    "@themost/cli": "^2.1.8",
+    "@types/chai": "^4.1.7",
+    "@types/express": "^4.16.1",
+    "@types/lodash": "^4.14.116",
+    "@types/mocha": "^5.2.6",
+    "@types/passport": "^1.0.0",
+    "@types/passport-local": "^1.0.33",
+    "@types/supertest": "^2.0.7",
+    "babel-eslint": "^10.0.1",
+    "chai": "^4.2.0",
+    "eslint": "^5.6.1",
+    "mocha": "^6.1.4",
+    "nodemon": "^1.19.0",
+    "passport-http": "^0.3.0",
+    "rimraf": "^2.6.3",
+    "supertest": "^4.0.2"
+  },
+  "dependencies": {
+    "@themost/client": "^2.1.3",
+    "@themost/express": "file:../../modules/@themost/express",
+    "@themost/node": "^2.1.1",
+    "@themost/sqlite": "^2.2.1",
+    "@themost/web": "^2.3.1",
+    "cookie-parser": "^1.4.4",
+    "cookie-session": "^1.3.3",
+    "debug": "~2.6.9",
+    "ejs": "~2.5.7",
+    "ejs-locals": "^1.0.2",
+    "express": "~4.16.0",
+    "express-session": "^1.16.1",
+    "http-errors": "~1.6.2",
+    "morgan": "~1.9.0",
+    "node-sass-middleware": "0.11.0",
+    "passport": "^0.4.0",
+    "passport-local": "^1.0.0"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "server",
+      "bin"
+    ],
+    "verbose": true,
+    "legacy-watch": true,
+    "execMap": {
+      "js": "node --require @babel/register"
+    },
+    "env": {
+      "NODE_ENV": "development"
+    },
+    "ext": "js,json"
+  },
+  "eslintConfig": {
+    "parser": "babel-eslint",
+    "env": {
+      "browser": true,
+      "node": true,
+      "es6": true,
+      "jquery": true
+    },
+    "globals": {
+      "describe": false,
+      "it": false,
+      "before": false,
+      "after": false
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+      "no-console": "off",
+      "no-invalid-this": "warn",
+      "no-undef": "error",
+      "no-unused-vars": "warn",
+      "no-var": [
+        "error"
+      ],
+      "strict": [
+        2,
+        "never"
+      ]
+    }
+  }
+}
