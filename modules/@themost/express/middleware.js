@@ -659,12 +659,31 @@ function getEntityNavigationProperty(options) {
                 });
             }
             else if (mapping.childModel === thisModel.name && mapping.associationType === 'association') {
-                //get associated model
+                // get associated model
                 var parentModel = req.context.model(mapping.parentModel);
                 if (_.isNil(parentModel)) {
                     return next(new HttpNotFoundError("Parent associated model not found"));
                 }
-                return thisModel.where(thisModel.primaryKey).equal(obj.id).select(thisModel.primaryKey, navigationProperty).expand(navigationProperty).getItem().then(function (result) {
+                // init expand property
+                let navigationPropertyExpand = {
+                    // set name
+                    name: navigationProperty,
+                    // set options to empty object
+                    options: {
+                    }
+                };
+                // validate $select system query option
+                if (req.query.$select) {
+                    // add $select option
+                    navigationPropertyExpand.options.$select = req.query.$select;
+                }
+                // validate $expand system query option
+                if (req.query.$expand) {
+                    // add $expand option
+                    navigationPropertyExpand.options.$expand = req.query.$expand;
+                }
+                // select identifier and navigation property and also expand navigation prop
+                return thisModel.where(thisModel.primaryKey).equal(obj.id).select(thisModel.primaryKey,navigationProperty).expand(navigationPropertyExpand).getItem().then(function (result) {
                     return res.json(result[navigationProperty]);
                 });
             }
