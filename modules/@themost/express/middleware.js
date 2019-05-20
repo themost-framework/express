@@ -16,7 +16,7 @@ var parseBoolean = require('@themost/common/utils').LangUtils.parseBoolean;
 var HttpNotFoundError = require('@themost/common/errors').HttpNotFoundError;
 var HttpBadRequestError = require('@themost/common/errors').HttpBadRequestError;
 var HttpMethodNotAllowedError = require('@themost/common/errors').HttpMethodNotAllowedError;
-
+var DefaultTopOption = 25;
 /**
  * Interface for options that may be passed to bindEntitySet middleware.
  *
@@ -259,7 +259,9 @@ function getEntitySet(options) {
         }
         //get count parameter
         var count = req.query.hasOwnProperty('$inlinecount') ? parseBoolean(req.query.$inlinecount) : (req.query.hasOwnProperty('$count') ? parseBoolean(req.query.$count) : false);
-        thisModel.filter(req.query).then(function (q) {
+        thisModel.filter(_.extend({
+            $top: DefaultTopOption
+        }, req.query)).then(function (q) {
             if (count) {
                 return q.getList().then(function (result) {
                     return res.json(req.entitySet.mapInstanceSet(req.context, result));
@@ -588,7 +590,9 @@ function getEntityNavigationProperty(options) {
                  * @type {DataQueryable}
                  */
                 var junction = obj.property(navigationProperty);
-                return Q.nbind(junction.model.filter, junction.model)(req.query).then(function (q) {
+                return Q.nbind(junction.model.filter, junction.model)(_.extend({
+                    $top: DefaultTopOption
+                }, req.query)).then(function (q) {
                     //merge properties
                     if (q.query.$select) {
                         junction.query.$select = q.query.$select;
@@ -638,7 +642,7 @@ function getEntityNavigationProperty(options) {
                 }
                 returnEntitySet = builder.getEntityTypeEntitySet(mapping.childModel);
                 return Q.nbind(associatedModel.filter, associatedModel)(_.extend({
-                    "$top": 25
+                    $top: DefaultTopOption
                 }, req.query)).then(function (q) {
                     if (count) {
                         return q.where(mapping.childField).equal(key).getList().then(function (result) {
@@ -813,7 +817,7 @@ function getEntitySetFunction(options) {
                             return next(new HttpBadRequestError());
                         }
                         return filter(_.extend({
-                            "$top": 25
+                            $top: DefaultTopOption
                         }, req.query)).then(function (q) {
                             var count = req.query.hasOwnProperty('$inlinecount') ?
                                 parseBoolean(req.query.$inlinecount) : (req.query.hasOwnProperty('$count') ?
@@ -1199,7 +1203,7 @@ function getEntityFunction(options) {
                         }
                         //else if the return value is a collection
                         return filter(_.extend({
-                            "$top": 25
+                            $top: DefaultTopOption
                         }, req.query)).then(function (q) {
                             var count = req.query.hasOwnProperty('$inlinecount') ? parseBoolean(req.query.$inlinecount) : (req.query.hasOwnProperty('$count') ? parseBoolean(req.query.$count) : false);
                             var q1 = extendQueryable(result, q);
