@@ -62,7 +62,7 @@ ExpressDataApplication.prototype.useStrategy = function(serviceCtor, strategyCto
  */ 
 ExpressDataApplication.prototype.useModelBuilder = function() {
     // initialize data model builder
-    var builder = new ODataConventionModelBuilder(new DataConfiguration(this.getConfiguration().getConfigurationPath()));
+    var builder = new ODataConventionModelBuilder(this.getConfiguration().getStrategy(DataConfigurationStrategy));
     // initialize model builder
     builder.initializeSync();
     // use model convention builder
