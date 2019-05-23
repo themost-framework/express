@@ -1,6 +1,6 @@
 {
   "name": "@themost/express",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "description": "MOST Data ORM Express Middleware",
   "main": "index.js",
   "scripts": {
