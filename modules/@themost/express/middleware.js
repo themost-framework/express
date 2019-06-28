@@ -669,7 +669,7 @@ function getEntityNavigationProperty(options) {
                     return next(new HttpNotFoundError("Parent associated model not found"));
                 }
                 // init expand property
-                let navigationPropertyExpand = {
+                var navigationPropertyExpand = {
                     // set name
                     name: navigationProperty,
                     // set options to empty object
@@ -839,6 +839,29 @@ function getEntitySetFunction(options) {
                             });
                         });
                     }
+                    // check if entitySetFunction route contains an entityFunction call
+                    if (_.isString(entityFunction)) {
+                        // get return model
+                        returnModel = req.context.model(func.returnType);
+                        if (returnModel == null) {
+                            // throw error for unknown model
+                            return next(new HttpBadRequestError('Entity set function return type is invalid. Expected an instance of DataModel but the specified data model cannot be found.'));
+                        }
+                        // get return entity set
+                        returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
+                        //set internal identifier for object
+                        req.params._id = result[returnModel.primaryKey];
+                        //set internal entity function
+                        req.params._entityFunction = entityFunction;
+                        // set entity for further use
+                        req.entity = result;
+                        // call entity function middleware
+                        return getEntityFunction({
+                            entitySet: returnEntitySet.name,
+                            from: '_id',
+                            entityFunctionFrom: '_entityFunction'
+                        })(req, res, next);
+                    }
                     if (_.isNil(navigationProperty)) {
                         if (returnsCollection) {
                             return res.json(result);
@@ -946,16 +969,18 @@ function postEntitySetFunction(options) {
                     // do nothing
                     return next();
                 }
+                var returnEntitySet;
+                var returnModel;
                 return Q.resolve(staticFunc(req.context)).then(function (result) {
                     if (result instanceof DataQueryable) {
                         // get return model (if any)
-                        var returnModel = req.context.model(func.returnType || func.returnCollectionType);
+                        returnModel = req.context.model(func.returnType || func.returnCollectionType);
                         // throw exception for unknown model
                         if (_.isNil(returnModel)) {
                             return Q.reject(new HttpNotFoundError("Result Entity not found"));
                         }
                         // get return entity set
-                        var returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
+                        returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
                         // get item
                         return result.getItem().then(function (result) {
                             if (_.isNil(result)) {
@@ -973,6 +998,29 @@ function postEntitySetFunction(options) {
                             })(req, res, next);
                         });
                     }
+                    if (typeof result === 'object')
+                    {
+                        // get return model
+                        returnModel = req.context.model(func.returnType);
+                        if (returnModel == null) {
+                            // throw error for unknown model
+                            return next(new HttpBadRequestError('Entity set function return type is invalid. Expected an instance of DataModel but the specified data model cannot be found.'));
+                        }
+                        // get return entity set
+                        returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
+                        req.entity = result;
+                        //set internal identifier for object
+                        req.params._id = result[returnModel.primaryKey];
+                        //set internal entity function
+                        req.params._entityAction = entityAction;
+                        // call entity function middleware
+                        return postEntityAction({
+                            entitySet: returnEntitySet.name,
+                            from: '_id',
+                            entityActionFrom: '_entityAction'
+                        })(req, res, next);
+                    }
+                    return next();
                 }).catch((function (err) {
                     return next(err);
                 }));
@@ -1152,8 +1200,14 @@ function getEntityFunction(options) {
         if (typeof func === 'undefined') {
             return next();
         }
+        function tryGetEntity() {
+            if (req.entity) {
+                return Q.resolve(req.entity);
+            }
+            return thisModel.where(thisModel.primaryKey).equal(req.params[opts.from]).select(thisModel.primaryKey).getTypedItem();
+        }
         // get typed item
-        thisModel.where(thisModel.primaryKey).equal(req.params[opts.from]).select(thisModel.primaryKey).getTypedItem().then(function (obj) {
+        tryGetEntity().then(function (obj) {
             if (typeof obj === 'undefined') {
                 return res.status(404).send();
             }
@@ -1287,8 +1341,14 @@ function postEntityAction(options) {
         if (typeof action === 'undefined') {
             return next();
         }
+        function tryGetEntity() {
+            if (req.entity) {
+                return Q.resolve(req.entity);
+            }
+            return thisModel.where(thisModel.primaryKey).equal(req.params[opts.from]).select(thisModel.primaryKey).getTypedItem();
+        }
         // get typed item
-        thisModel.where(thisModel.primaryKey).equal(req.params[opts.from]).select(thisModel.primaryKey).getTypedItem().then(function (obj) {
+        tryGetEntity().then(function (obj) {
             if (typeof obj === 'undefined') {
                 return res.status(404).send();
             }

@@ -27,9 +27,9 @@
   "homepage": "https://github.com/kbarbounakis/most-data-express#readme",
   "devDependencies": {
     "@themost/common": "^2.3.1",
+    "@themost/data": "^2.3.1",
     "@themost/query": "^2.3.1",
-    "@themost/xml": "^2.3.1",
-    "@themost/data": "^2.3.1"
+    "@themost/xml": "^2.3.1"
   },
   "eslintConfig": {
     "env": {
@@ -54,5 +54,8 @@
         "never"
       ]
     }
+  },
+  "dependencies": {
+    "@themost/express": "file:modules/@themost/express"
   }
 }
