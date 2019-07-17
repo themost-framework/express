@@ -22,7 +22,6 @@ var ServicesConfiguration = require("./app-services-configuration").ServicesConf
 var configurationProperty = Symbol('configuration');
 var applicationProperty = Symbol('application');
 var unattendedProperty = Symbol('unattended');
-var servicesProperty = Symbol('services');
 /**
  * @class
  * @param {string} configurationPath - The configuration directory path
@@ -30,7 +29,11 @@ var servicesProperty = Symbol('services');
 function ExpressDataApplication(configurationPath) {
 
     //initialize services
-    this[servicesProperty] = { };
+    Object.defineProperty(this, 'services', {
+        value: { },
+        enumerable: false,
+        writable: false 
+    });
     // initialize @themost/data configuration
     this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath));
     // use default data configuration strategy
@@ -53,7 +56,7 @@ function ExpressDataApplication(configurationPath) {
 ExpressDataApplication.prototype.useStrategy = function(serviceCtor, strategyCtor) {
     Args.notFunction(strategyCtor,"Service constructor");
     Args.notFunction(strategyCtor,"Strategy constructor");
-    this[servicesProperty][serviceCtor.name] = new strategyCtor(this);
+    this.services[serviceCtor.name] = new strategyCtor(this);
     return this;
 };
 /**
@@ -86,7 +89,7 @@ ExpressDataApplication.prototype.getBuilder = function() {
 // eslint-disable-next-line no-unused-vars
 ExpressDataApplication.prototype.hasStrategy = function(serviceCtor) {
     Args.notFunction(serviceCtor,"Service constructor");
-    return this[servicesProperty].hasOwnProperty(serviceCtor.name);
+    return this.services.hasOwnProperty(serviceCtor.name);
 };
 
 /**
@@ -97,7 +100,7 @@ ExpressDataApplication.prototype.hasStrategy = function(serviceCtor) {
 // eslint-disable-next-line no-unused-vars
 ExpressDataApplication.prototype.getStrategy = function(serviceCtor) {
     Args.notFunction(serviceCtor,"Service constructor");
-    return this[servicesProperty][serviceCtor.name];
+    return this.services[serviceCtor.name];
 };
 /**
  * @returns {ConfigurationBase}
