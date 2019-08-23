@@ -177,12 +177,34 @@ ExpressDataApplication.prototype.execute = function(callable, callback) {
        });
   });
 };
-
-
-ExpressDataApplication.prototype.middleware = function() {
+/**
+ * @param {Express=} app
+ * @returns {*}
+ */
+ExpressDataApplication.prototype.middleware = function(app) {
   var thisApp = this;
+  // noinspection JSUnresolvedVariable
+    if (app && app.engines) {
+        // get express application engines
+        var engines  = Object.keys(app.engines).map(function(key) {
+            return {
+                name: key,
+                extension: /^\./.test(key) ? key.substr(1) : key,
+                render: function(name, options, callback) {
+                    if (new RegExp('.' + this.extension + '$', 'ig').test(name) === false) {
+                        return app.render(name.concat('.', this.extension), options, callback);
+                    }
+                    return app.render(name, options, callback);
+                }
+            }
+        });
+        // set application configuration engines based on underlying application
+        thisApp.getConfiguration().setSourceAt('engines', engines);
+    } else {
+        // set application configuration engines as empty array
+        thisApp.getConfiguration().setSourceAt('engines', []);
+    }
   return function dataContextMiddleware(req, res, next) {
-      
       var context = new ExpressDataContext(thisApp.getConfiguration());
       // define application property
       context[applicationProperty] = thisApp;
@@ -248,6 +270,14 @@ function ExpressDataContext(configuration) {
     this.getConfiguration = function() {
         return configuration;
     };
+    const self = this;
+    Object.defineProperty(this, 'application', {
+       enumerable: false,
+       configurable: false,
+       get() {
+           return self[applicationProperty];
+       }
+    });
 }
 LangUtils.inherits(ExpressDataContext, DefaultDataContext);
 /**
@@ -336,6 +366,25 @@ ExpressDataContext.prototype.unattended = function(callable, callback) {
         return callback(err);
     }
 };
+
+/**
+ * @param {string} extension
+ */
+ExpressDataContext.prototype.engine = function(extension) {
+    // format extension
+    var ext = /^\./.test(extension) ? extension.substr(1): extension;
+    // get engines
+    var engines = this.getConfiguration().getSourceAt('engines') || [];
+    // find engine by extension
+    var engine = engines.find(function(x) {
+        return x.extension === ext;
+    });
+    if (engine == null) {
+        throw new Error('The specified template engine cannot be found.');
+    }
+    return engine;
+};
+
 
 module.exports.ExpressDataContext = ExpressDataContext;
 module.exports.ExpressDataApplication = ExpressDataApplication;
