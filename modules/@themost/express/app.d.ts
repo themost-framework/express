@@ -11,6 +11,7 @@
  import {ODataModelBuilder} from '@themost/data/odata';
  import {DefaultDataContext} from '@themost/data/data-context';
  import {ConfigurationBase} from '@themost/common/config';
+import {Express, RequestHandler} from "express";
  
  export declare class ExpressDataApplication implements IApplication {
      
@@ -37,6 +38,8 @@
      execute(callable: Function, callback: Function);
 
      getConfiguration(): ConfigurationBase;
+
+     middleware(app?: any): RequestHandler;
  
  }
  /**
@@ -83,10 +86,14 @@
      interactiveUser?: InteractiveUser;
      
      user?: AuthenticatedUser;
+
+     application: ExpressDataApplication;
      
      getConfiguration(): ConfigurationBase;
      
      getApplication(): ExpressDataApplication;
      
      getStrategy(serviceCtor: Function): any;
+
+     engine(extension): any;
  }

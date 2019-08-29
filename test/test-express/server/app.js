@@ -35,6 +35,7 @@ app.engine('ejs', engine);
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+app.engine('.pug', require('pug').renderFile);
 
 app.use(logger('dev'));
 
@@ -58,7 +59,7 @@ app.use(cookieSession({
   keys: [secret]
 }));
 // use data middleware (register req.context)
-app.use(dataApplication.middleware());
+app.use(dataApplication.middleware(app));
 // use passport
 app.use(authRouter(passport));
 // use sass middleware
