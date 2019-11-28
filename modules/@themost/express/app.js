@@ -408,3 +408,4 @@ ExpressDataContext.prototype.engine = function(extension) {
 
 module.exports.ExpressDataContext = ExpressDataContext;
 module.exports.ExpressDataApplication = ExpressDataApplication;
+module.exports.ApplicationServiceRouter = ApplicationServiceRouter;
