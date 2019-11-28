@@ -13,6 +13,7 @@ var _helpers = require("./helpers");
 
 module.exports.ExpressDataContext = _app.ExpressDataContext;
 module.exports.ExpressDataApplication = _app.ExpressDataApplication;
+module.exports.ApplicationServiceRouter = _app.ApplicationServiceRouter;
 
 module.exports.getEntitySetIndex = _middleware.getEntitySetIndex;
 module.exports.getMetadataDocument = _middleware.getMetadataDocument;
