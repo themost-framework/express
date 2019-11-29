@@ -17,14 +17,32 @@ var DataConfiguration = require("@themost/data/data-configuration").DataConfigur
 var ODataConventionModelBuilder = require("@themost/data/odata").ODataConventionModelBuilder;
 var ODataModelBuilder = require("@themost/data/odata").ODataModelBuilder;
 var ServicesConfiguration = require("./app-services-configuration").ServicesConfiguration;
-
+var IApplicationService = require("@themost/common").IApplicationService;
 
 var configurationProperty = Symbol('configuration');
 var applicationProperty = Symbol('application');
 var unattendedProperty = Symbol('unattended');
+var serviceRouter = require('./service');
+/**
+ *
+ * @param {ExpressDataApplication} app
+ * @constructor
+ */
+function ApplicationServiceRouter(app) {
+    ApplicationServiceRouter.super_.bind(this)(app);
+}
+LangUtils.inherits(ApplicationServiceRouter, IApplicationService);
+/**
+ * Gets default service router
+ * @returns {Router}
+ */
+ApplicationServiceRouter.prototype.getServiceRouter = function() {
+    return serviceRouter;
+};
+
 /**
  * @class
- * @param {string} configurationPath - The configuration directory path
+ * @param {string=} configurationPath - The configuration directory path
  */ 
 function ExpressDataApplication(configurationPath) {
 
@@ -35,11 +53,13 @@ function ExpressDataApplication(configurationPath) {
         writable: false 
     });
     // initialize @themost/data configuration
-    this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath));
+    this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath || 'config'));
     // use default data configuration strategy
     this[configurationProperty].useStrategy(DataConfigurationStrategy, DataConfigurationStrategy);
     // use default model builder
     this.useModelBuilder();
+    // use application service router to allow service router extensions
+    this.useService(ApplicationServiceRouter);
     // register configuration services
     ServicesConfiguration.config(this);
 
@@ -388,3 +408,4 @@ ExpressDataContext.prototype.engine = function(extension) {
 
 module.exports.ExpressDataContext = ExpressDataContext;
 module.exports.ExpressDataApplication = ExpressDataApplication;
+module.exports.ApplicationServiceRouter = ApplicationServiceRouter;

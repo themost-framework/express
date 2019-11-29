@@ -6,8 +6,7 @@
  * Use of this source code is governed by an BSD-3-Clause license that can be
  * found in the LICENSE file at https://themost.io/license
  */
- var FunctionContext = require("@themost/data/data-context").FunctionContext;
- var Q = require("q");
+ var FunctionContext = require("@themost/data").FunctionContext;
  
  Object.assign(FunctionContext.prototype, {
      

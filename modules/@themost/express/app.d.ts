@@ -7,15 +7,20 @@
  * found in the LICENSE file at https://themost.io/license
  */
  
- import {IApplication} from '@themost/common/app';
+ import {IApplication, IApplicationService} from '@themost/common/app';
  import {ODataModelBuilder} from '@themost/data/odata';
  import {DefaultDataContext} from '@themost/data/data-context';
  import {ConfigurationBase} from '@themost/common/config';
-import {Express, RequestHandler} from "express";
- 
+ import {Express, RequestHandler, Router} from 'express';
+
+ export declare class ApplicationServiceRouter implements IApplicationService {
+     getApplication(): IApplication;
+     getServiceRouter(): Router;
+ }
+
  export declare class ExpressDataApplication implements IApplication {
      
-     constructor(configurationPath: string);
+     constructor(configurationPath?: string);
      
      useModelBuilder(): ODataModelBuilder;
      
