@@ -20,7 +20,7 @@
 
  export declare class ExpressDataApplication implements IApplication {
      
-     constructor(configurationPath: string);
+     constructor(configurationPath?: string);
      
      useModelBuilder(): ODataModelBuilder;
      

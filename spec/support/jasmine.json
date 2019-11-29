@@ -1,0 +1,12 @@
+{
+  "spec_dir": "spec",
+  "spec_files": [
+    "../modules/@themost/express/*[sS]pec.js"
+  ],
+  "helpers": [
+    "./helpers/env.js",
+    "./helpers/**/*.js"
+  ],
+  "stopSpecOnExpectationFailure": false,
+  "random": false
+}

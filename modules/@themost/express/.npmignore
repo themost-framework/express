@@ -4,3 +4,4 @@
 # dev
 node_modules
 test
+*.spec.js

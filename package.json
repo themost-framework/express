@@ -5,7 +5,7 @@
   "description": "MOST Data ORM Express Middleware",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jasmine"
   },
   "repository": {
     "type": "git",
@@ -26,10 +26,24 @@
   },
   "homepage": "https://github.com/kbarbounakis/most-data-express#readme",
   "devDependencies": {
-    "@themost/common": "^2.3.1",
-    "@themost/data": "^2.3.1",
-    "@themost/query": "^2.3.1",
-    "@themost/xml": "^2.3.1"
+    "@themost/common": "^2.3.2",
+    "@themost/data": "^2.4.9",
+    "@themost/query": "^2.3.4",
+    "@themost/sqlite": "^2.2.1",
+    "@themost/xml": "^2.3.1",
+    "@types/express": "^4.17.2",
+    "@types/jasmine": "^3.5.0",
+    "@types/q": "^1.5.2",
+    "@types/supertest": "^2.0.8",
+    "debug": "^4.1.1",
+    "express": "^4.16.3",
+    "jasmine": "^3.5.0",
+    "jasmine-spec-reporter": "^4.2.1",
+    "lodash": "^4.17.11",
+    "pluralize": "^7.0.0",
+    "q": "^1.5.1",
+    "supertest": "^4.0.2",
+    "symbol": "^0.3.1"
   },
   "eslintConfig": {
     "env": {
@@ -55,7 +69,5 @@
       ]
     }
   },
-  "dependencies": {
-    "@themost/express": "file:modules/@themost/express"
-  }
+  "dependencies": {}
 }

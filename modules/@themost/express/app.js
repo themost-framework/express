@@ -42,7 +42,7 @@ ApplicationServiceRouter.prototype.getServiceRouter = function() {
 
 /**
  * @class
- * @param {string} configurationPath - The configuration directory path
+ * @param {string=} configurationPath - The configuration directory path
  */ 
 function ExpressDataApplication(configurationPath) {
 
@@ -53,7 +53,7 @@ function ExpressDataApplication(configurationPath) {
         writable: false 
     });
     // initialize @themost/data configuration
-    this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath));
+    this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath || 'config'));
     // use default data configuration strategy
     this[configurationProperty].useStrategy(DataConfigurationStrategy, DataConfigurationStrategy);
     // use default model builder
