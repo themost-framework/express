@@ -4,6 +4,39 @@ const ExpressDataApplication = require('./app').ExpressDataApplication;
 const request = require('supertest');
 const express = require('express');
 const { HttpNotFoundError } = require('@themost/common');
+const BearerStrategy = require('passport-http-bearer');
+const passport = require('passport');
+/**
+ * A passport strategy for testing purposes
+ */
+class TestPassportStrategy extends BearerStrategy {
+    /**
+     * @param {*=} user
+     */
+    constructor(user) {
+        super({
+            passReqToCallback: true,
+            realm: 'Users'
+        }, (req, token, done) => {
+            return done(self.getUser());
+        });
+        const self = this;
+        // set user
+        this.getUser = () => {
+            return user || {
+                name: 'anonymous',
+                authenticationType: 'none',
+            }
+        };
+        this.name = 'bearer';
+    }
+    authenticate(req) {
+        const self = this;
+        return self._verify(req, null, (user)=> {
+            return self.success(self.getUser());
+        });
+    }
+}
 
 describe('ExpressDataApplication', () => {
     /**
@@ -16,6 +49,8 @@ describe('ExpressDataApplication', () => {
      * @type {Router}
      */
     let testRouter = express.Router();
+
+    let passportStrategy = new TestPassportStrategy();
     beforeAll(() => {
         app = express();
         // create a new instance of data application
@@ -24,8 +59,10 @@ describe('ExpressDataApplication', () => {
         app.set('ExpressDataApplication', dataApplication);
         // use data middleware (register req.context)
         app.use(dataApplication.middleware(app));
+        // use test passport strategy
+        passport.use(passportStrategy);
         // set testRouter
-        app.use('/', testRouter);
+        app.use('/', passport.authenticate('bearer', { session: false }), testRouter);
     });
 
     beforeEach(() => {
@@ -90,10 +127,11 @@ describe('ExpressDataApplication', () => {
         expect(response.status).toBe(200);
     });
 
-    it('should get anonymous user', async () => {
+    it('should get context user', async () => {
         testRouter.get('/api/users/me/', (req, res, next) => {
             req.context.model('Users')
-                .where('name').equal('anonymous')
+                .where('name').equal(req.context.user.name)
+                .expand('groups')
                 .getItem().then( value => {
                 return res.json(value);
             });
@@ -105,6 +143,18 @@ describe('ExpressDataApplication', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.name).toBe('anonymous');
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+           name: 'alexis.rees@example.com'
+        });
+        response = await request(app)
+            .get('/api/users/me/')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.name).toBe('alexis.rees@example.com');
+
     });
 
 });
