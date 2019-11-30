@@ -4,9 +4,10 @@
     "../modules/@themost/express/*[sS]pec.js"
   ],
   "helpers": [
+    "./helpers/babel.js",
     "./helpers/env.js",
-    "./helpers/**/*.js"
+    "./helpers/reporter.js"
   ],
-  "stopSpecOnExpectationFailure": false,
+  "stopSpecOnExpectationFailure": true,
   "random": false
 }

@@ -1,0 +1,29 @@
+{
+    "parser": "babel-eslint",
+    "env": {
+        "browser": true,
+        "node": true,
+        "es6": true,
+        "jquery": true
+    },
+    "globals": {
+        "describe": false,
+        "it": false,
+        "beforeAll": false,
+        "beforeEach": false,
+        "expect": false,
+        "spyOn": false
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "no-console": "warn",
+        "no-invalid-this": "warn",
+        "no-undef": "error",
+        "no-unused-vars": "warn",
+        "no-var": "off",
+        "strict": [
+            2,
+            "never"
+        ]
+    }
+}

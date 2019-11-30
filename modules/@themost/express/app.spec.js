@@ -30,9 +30,10 @@ class TestPassportStrategy extends BearerStrategy {
         };
         this.name = 'bearer';
     }
+    // noinspection JSUnusedGlobalSymbols
     authenticate(req) {
         const self = this;
-        return self._verify(req, null, (user)=> {
+        return self._verify(req, null, ()=> {
             return self.success(self.getUser());
         });
     }
@@ -128,7 +129,7 @@ describe('ExpressDataApplication', () => {
     });
 
     it('should get context user', async () => {
-        testRouter.get('/api/users/me/', (req, res, next) => {
+        testRouter.get('/api/users/me/', (req, res) => {
             req.context.model('Users')
                 .where('name').equal(req.context.user.name)
                 .expand('groups')
