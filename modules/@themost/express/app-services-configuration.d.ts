@@ -6,7 +6,7 @@
  * Use of this source code is governed by an BSD-3-Clause license that can be
  * found in the LICENSE file at https://themost.io/license
  */
-import {ExpressDataApplication} from "./app";
+import {ExpressDataApplication} from './app';
 
 export declare interface ServiceConfigurationElement {
     serviceType: string;
@@ -14,5 +14,5 @@ export declare interface ServiceConfigurationElement {
 }
 
 export declare class ServicesConfiguration {
-    config(app: ExpressDataApplication);
+    public config(app: ExpressDataApplication): void;
 }

@@ -1,6 +1,5 @@
 {
     "parser": "babel-eslint",
-    "ignorePatterns": ["**/*.ts", "node_modules"],
     "env": {
         "browser": true,
         "node": true,
