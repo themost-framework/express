@@ -1,5 +1,7 @@
 ![](https://github.com/kbarbounakis/most-data-express/workflows/Test/badge.svg)
 
+[![License](https://img.shields.io/npm/l/@themost/express.svg)](/LICENSE)
+
 # @themost/express
 MOST Data ORM Extension for ExpressJS
 
