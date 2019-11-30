@@ -11,7 +11,7 @@
  import {ODataModelBuilder} from '@themost/data/odata';
  import {DefaultDataContext} from '@themost/data/data-context';
  import {ConfigurationBase} from '@themost/common/config';
- import {Express, RequestHandler, Router} from 'express';
+ import {RequestHandler, Router} from 'express';
 
  export declare class ApplicationServiceRouter implements IApplicationService {
      getApplication(): IApplication;
