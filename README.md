@@ -1,3 +1,5 @@
+![](https://github.com/kbarbounakis/most-data-express/workflows/Test/badge.svg)
+
 # @themost/express
 MOST Data ORM Extension for ExpressJS
 
