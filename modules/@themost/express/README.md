@@ -1,4 +1,4 @@
-# @themost/express
+## @themost/express
 MOST Data ORM Extension for ExpressJS
 
 ### Installation
@@ -27,7 +27,7 @@ and serve the new application by executing:
 
     npm run serve
   
-Open your browser and navigate to http://127.0.0.1:3000
+Open your browser and navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
     
 ### Usage
 
