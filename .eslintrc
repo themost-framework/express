@@ -12,7 +12,8 @@
         "beforeAll": false,
         "beforeEach": false,
         "expect": false,
-        "spyOn": false
+        "spyOn": false,
+        "jasmine": false
     },
     "extends": "eslint:recommended",
     "rules": {

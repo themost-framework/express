@@ -158,14 +158,14 @@ function bindEntitySet(options) {
 
 function tryBindEntitySet(req, entitySet) {
     if (typeof req.context === 'undefined') {
-        return;
+        return null;
     }
     /**
      * @type {ODataModelBuilder}
      */
     var builder = req.context.getApplication().getStrategy(ODataModelBuilder);
     if (typeof builder === 'undefined') {
-        return;
+        return null;
     }
     /**
      * @type {EntitySetConfiguration}
@@ -241,7 +241,7 @@ function getEntitySet(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -296,7 +296,7 @@ function postEntitySet(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -341,7 +341,7 @@ function deleteEntitySet(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -387,7 +387,7 @@ function getEntity(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -438,7 +438,7 @@ function deleteEntity(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -486,7 +486,7 @@ function postEntity(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -545,7 +545,7 @@ function getEntityNavigationProperty(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -720,7 +720,7 @@ function getEntitySetFunction(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -925,7 +925,7 @@ function postEntitySetFunction(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -1052,7 +1052,7 @@ function postEntitySetAction(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -1171,7 +1171,7 @@ function getEntityFunction(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }
@@ -1311,7 +1311,7 @@ function postEntityAction(options) {
         if (opts.entitySet) {
             req.entitySet = tryBindEntitySet(req, opts.entitySet);
             // throw error if the given entity set cannot be found
-            if (typeof req.entitySet === 'undefined') {
+            if (req.entitySet == null) {
                 return next(new HttpNotFoundError('The given entity set cannot be found'));
             }
         }

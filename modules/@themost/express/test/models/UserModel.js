@@ -1,4 +1,4 @@
-const {DataObject, EdmMapping, EdmType} = require('@themost/data');
+const {DataObject, EdmMapping} = require('@themost/data');
 @EdmMapping.entityType('User')
 class User extends DataObject {
     constructor() {

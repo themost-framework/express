@@ -13,7 +13,6 @@ var Args = require("@themost/common").Args;
 var DefaultDataContext = require("@themost/data/data-context").DefaultDataContext;
 var ConfigurationBase = require("@themost/common/config").ConfigurationBase;
 var DataConfigurationStrategy = require("@themost/data/data-configuration").DataConfigurationStrategy;
-var DataConfiguration = require("@themost/data/data-configuration").DataConfiguration;
 var ODataConventionModelBuilder = require("@themost/data/odata").ODataConventionModelBuilder;
 var ODataModelBuilder = require("@themost/data/odata").ODataModelBuilder;
 var ServicesConfiguration = require("./app-services-configuration").ServicesConfiguration;
