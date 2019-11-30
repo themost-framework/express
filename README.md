@@ -1,3 +1,4 @@
+[![npm](https://img.shields.io/npm/v/@themost%2Fexpress.svg)](https://www.npmjs.com/package/@themost%2Fexpress)
 ![](https://github.com/kbarbounakis/most-data-express/workflows/test/badge.svg) 
 ![](https://img.shields.io/david/dev/kbarbounakis/most-data-express) ![](https://img.shields.io/david/peer/kbarbounakis/most-data-express?path=modules%2F%40themost%2Fexpress)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/dfea8d9613474170b13e298d416c5c37)](https://www.codacy.com/manual/kbarbounakis/most-data-express?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=kbarbounakis/most-data-express&amp;utm_campaign=Badge_Grade)
