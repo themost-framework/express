@@ -1,4 +1,5 @@
-![](https://github.com/kbarbounakis/most-data-express/workflows/Test/badge.svg)
+![](https://github.com/kbarbounakis/most-data-express/workflows/Test/badge.svg) 
+![](https://img.shields.io/david/dev/kbarbounakis/most-data-express) ![](https://img.shields.io/david/peer/kbarbounakis/most-data-express?path=modules%2F%40themost%2Fexpress)
 
 [![License](https://img.shields.io/npm/l/@themost/express.svg)](/LICENSE)
 
