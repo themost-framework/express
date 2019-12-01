@@ -27,7 +27,7 @@
             "invariantName": "sqlite",
             "default": true,
             "options": {
-                "database": "modules/@themost/express/test/db/local.db"
+                "database": "modules/@themost/express/src/test/db/local.db"
             }
         }
     ]

@@ -1,11 +1,12 @@
 
-const path = require('path');
-const ExpressDataApplication = require('./app').ExpressDataApplication;
-const request = require('supertest');
-const express = require('express');
-const { HttpNotFoundError } = require('@themost/common');
-const BearerStrategy = require('passport-http-bearer');
-const passport = require('passport');
+import path from 'path';
+import {ExpressDataApplication, ApplicationServiceRouter} from './index';
+import request from 'supertest';
+import express from 'express';
+import {HttpNotFoundError} from '@themost/common';
+import BearerStrategy from 'passport-http-bearer';
+import passport from 'passport';
+import {DefaultDataContext, ODataModelBuilder, DataConfigurationStrategy} from "@themost/data";
 /**
  * A passport strategy for testing purposes
  */
@@ -76,6 +77,75 @@ describe('ExpressDataApplication', () => {
     it('should use new ExpressDataApplication()', async ()=> {
         const dataApplication = new ExpressDataApplication();
         expect(dataApplication).toBeTruthy();
+    });
+
+    it('should use new ExpressDataApplication.useStrategy()', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        class TestStrategy {
+            title = 'Test Strategy';
+        }
+        class DefaultTestStrategy {
+            title = 'Default Test Strategy';
+        }
+        expect(dataApplication.hasStrategy(TestStrategy)).toBeFalsy();
+        dataApplication.useStrategy(TestStrategy, DefaultTestStrategy);
+        expect(dataApplication.hasStrategy(TestStrategy)).toBeTruthy();
+        expect(dataApplication.getStrategy(TestStrategy)).toBeTruthy();
+    });
+
+    it('should use new ExpressDataApplication.useService()', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        class TestService {
+            title = 'A test service';
+        }
+        expect(dataApplication.hasService(TestService)).toBeFalsy();
+        dataApplication.useService(TestService);
+        expect(dataApplication.hasService(TestService)).toBeTruthy();
+        expect(dataApplication.getService(TestService)).toBeInstanceOf(TestService);
+    });
+
+    it('should use new ExpressDataApplication.useModelBuilder()', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        dataApplication.useModelBuilder();
+        expect(dataApplication.getBuilder()).toBeInstanceOf(ODataModelBuilder);
+    });
+
+    it('should use new ExpressDataApplication.createContext()', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        const context = dataApplication.createContext();
+        expect(context).toBeInstanceOf(DefaultDataContext);
+    });
+
+    it('should use new ExpressDataContext.getStrategy()', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        const context = dataApplication.createContext();
+        expect(context).toBeInstanceOf(DefaultDataContext);
+        expect(context.getStrategy(DataConfigurationStrategy)).toBeTruthy();
+    });
+
+    it('should use new ExpressDataContext.engine()', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        const context = dataApplication.createContext();
+        expect(context).toBeInstanceOf(DefaultDataContext);
+        expect(() => {
+            context.engine('.missing');
+        }).toThrowError();
+    });
+
+    it('should use new ExpressDataApplication.execute()', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        dataApplication.execute( context => {
+            expect(context).toBeInstanceOf(DefaultDataContext);
+        }, err => {
+            expect(err).toBeFalsy();
+        });
+    });
+
+    it('should use new ExpressDataApplication.getService(ApplicationServiceRouter)', async ()=> {
+        const dataApplication = new ExpressDataApplication();
+        const service = dataApplication.getService(ApplicationServiceRouter);
+        expect(service).toBeInstanceOf(ApplicationServiceRouter);
+        expect(service.serviceRouter).toBeTruthy();
     });
 
     it('should use Request.context', async ()=> {

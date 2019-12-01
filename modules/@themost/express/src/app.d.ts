@@ -13,11 +13,11 @@
  import {RequestHandler, Router} from 'express';
 
  export declare class ApplicationServiceRouter implements IApplicationService {
+     public serviceRouter: Router;
      public getApplication(): IApplication;
-     public getServiceRouter(): Router;
  }
 
- export declare class ExpressDataApplication implements IApplication {
+ export declare class ExpressDataApplication {
 
      constructor(configurationPath?: string);
 
@@ -25,17 +25,17 @@
 
      public getBuilder(): ODataModelBuilder;
 
-     public useStrategy(serviceCtor: void, strategyCtor: void): IApplication;
+     public useStrategy(serviceCtor: void, strategyCtor: void): this;
 
-     public useService(serviceCtor: void): ExpressDataApplication;
+     public useService(serviceCtor: void): this;
 
-     public hasStrategy(serviceCtor: void): boolean;
+     public hasStrategy<T>(serviceCtor: new() => T): boolean;
 
-     public hasService(serviceCtor: void): boolean;
+     public hasService<T>(serviceCtor: new() => T): boolean;
 
-     public getStrategy(serviceCtor: void): any;
+     public getStrategy<T>(serviceCtor: new() => T): T;
 
-     public getService(serviceCtor: void): any;
+     public getService<T>(serviceCtor: new() => T): T;
 
      public createContext(): ExpressDataContext;
 
@@ -95,7 +95,7 @@
 
      public getApplication(): ExpressDataApplication;
 
-     public getStrategy(serviceCtor: void): any;
+     public getStrategy<T>(serviceCtor: new() => T): T;
 
      public engine(extension): any;
  }
