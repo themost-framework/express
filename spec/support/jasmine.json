@@ -1,7 +1,7 @@
 {
   "spec_dir": "spec",
   "spec_files": [
-    "../modules/@themost/express/*[sS]pec.js"
+    "../modules/@themost/express/src/*[sS]pec.js"
   ],
   "helpers": [
     "./helpers/babel.js",

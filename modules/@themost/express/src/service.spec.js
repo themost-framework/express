@@ -4,7 +4,7 @@ import request from 'supertest';
 import express from 'express';
 import BearerStrategy from 'passport-http-bearer';
 import passport from 'passport';
-import serviceRouter from './service';
+import {serviceRouter} from './service';
 import {dateReviver} from './helpers';
 /**
  * A passport strategy for testing purposes
@@ -187,20 +187,20 @@ describe('serviceRouter', () => {
             }
         });
 
-        response = await request(app)
+        let response1 = await request(app)
             .get('/api/products/')
             .query({
                 $orderby: 'price desc'
             })
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
-        expect(response.status).toBe(200);
-        expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
-        response.body.value.forEach( (x, i) => {
+        expect(response1.status).toBe(200);
+        expect(response1.body).toBeTruthy();
+        expect(response1.body.value).toBeInstanceOf(Array);
+        response1.body.value.forEach( (x, i) => {
             if (i > 0) {
                 // noinspection JSUnresolvedVariable
-                expect(x.price).toBeLessThanOrEqual(response.body.value[i-1].price);
+                expect(x.price).toBeLessThanOrEqual(response1.body.value[i-1].price);
             }
         });
     });
