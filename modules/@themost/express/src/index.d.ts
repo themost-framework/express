@@ -5,8 +5,7 @@
  * Use of this source code is governed by an BSD-3-Clause license that can be
  * found in the LICENSE file at https://themost.io/license
  */
-import * as serviceRouter from './service';
 export * from './app';
 export * from './middleware';
 export * from './helpers';
-export {serviceRouter};
+export * from './service';
