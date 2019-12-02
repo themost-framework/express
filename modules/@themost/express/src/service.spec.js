@@ -298,7 +298,7 @@ describe('serviceRouter', () => {
         expect(response.body.value).toBeInstanceOf(Array);
         expect(response.body.value.length).toBe(1);
         const person = response.body.value[0];
-        await request(app)
+        response = await request(app)
             .get(`/api/people/${person.id}/orders`)
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
@@ -306,7 +306,8 @@ describe('serviceRouter', () => {
         expect(response.body).toBeTruthy();
         expect(response.body.value).toBeInstanceOf(Array);
         response.body.value.forEach( x => {
-            expect(x).toBeTruthy()
+            expect(x.additionalType).toBe('Order');
+            expect(x).toBeTruthy();
         });
     });
 
