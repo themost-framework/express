@@ -5,11 +5,15 @@
   "description": "MOST Data ORM Express Middleware",
   "main": "index.js",
   "scripts": {
-    "build": "cd modules/@themost/express && rollup -c rollup.config.js -m",
-    "watch": "cd modules/@themost/express && rollup -c rollup.config.js -m -w",
+    "clean": "cd modules/@themost/express && rimraf dist",
+    "build": "cd modules/@themost/express && rimraf dist && rollup -c rollup.config.js -m",
+    "watch": "cd modules/@themost/express && rimraf dist && rollup -c rollup.config.js -m -w",
     "test": "jasmine",
     "test-with-coverage": "istanbul cover jasmine",
     "lint": "eslint modules/@themost/express"
+  },
+  "engines": {
+    "node": ">=6.9.4"
   },
   "repository": {
     "type": "git",
@@ -62,6 +66,7 @@
     "passport-http-bearer": "^1.0.1",
     "pluralize": "^7.0.0",
     "q": "^1.5.1",
+    "rimraf": "^3.0.0",
     "rollup": "^1.27.6",
     "rollup-plugin-auto-external": "^2.0.0",
     "rollup-plugin-babel": "^4.3.3",

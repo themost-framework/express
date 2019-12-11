@@ -310,7 +310,7 @@ describe('serviceRouter', () => {
             expect(x).toBeTruthy();
         });
     });
-    fit('should query products with text', async () => {
+    it('should query products with text', async () => {
         // change user
         spyOn(passportStrategy, 'getUser').and.returnValue({
             name: 'alexis.rees@example.com'

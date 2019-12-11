@@ -16,11 +16,6 @@ module.exports = [{
         {
             file: `${dist}${name}.esm.js`,
             format: 'esm'
-        },
-        {
-            name: '@themost/express',
-            file: `${dist}${name}.js`,
-            format: 'umd'
         }
     ],
     plugins: [

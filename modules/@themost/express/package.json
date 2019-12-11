@@ -2,7 +2,7 @@
   "name": "@themost/express",
   "version": "1.5.3",
   "description": "MOST Data ORM Express Middleware",
-  "main": "dist/themost_express.js",
+  "main": "dist/themost_express.cjs.js",
   "types": "dist/themost_express.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
