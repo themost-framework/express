@@ -3,8 +3,11 @@
 ![](https://img.shields.io/david/dev/kbarbounakis/most-data-express) ![](https://img.shields.io/david/peer/kbarbounakis/most-data-express?path=modules%2F%40themost%2Fexpress)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/dfea8d9613474170b13e298d416c5c37)](https://www.codacy.com/manual/kbarbounakis/most-data-express?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=kbarbounakis/most-data-express&amp;utm_campaign=Badge_Grade)
 ![GitHub top language](https://img.shields.io/github/languages/top/kbarbounakis/most-data-express)
-
 [![License](https://img.shields.io/npm/l/@themost/express.svg)](/LICENSE)
+![GitHub last commit](https://img.shields.io/github/last-commit/kbarbounakis/most-data-express)
+![GitHub Release Date](https://img.shields.io/github/release-date/kbarbounakis/most-data-express)
+[![npm](https://img.shields.io/npm/dw/@themost/data)](https://www.npmjs.com/package/@themost%2Fexpress)
+![Snyk Vulnerabilities for npm package](https://img.shields.io/snyk/vulnerabilities/npm/@themost/express)
 
 ## @themost/express
 MOST Data ORM Extension for ExpressJS
