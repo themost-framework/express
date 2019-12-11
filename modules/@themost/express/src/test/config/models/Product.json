@@ -13,7 +13,7 @@
             "name": "category",
             "title": "Category",
             "description": "A category related to this product.",
-            "type": "ProductCategory"
+            "type": "Text"
         },
         {
             "name": "discontinued",

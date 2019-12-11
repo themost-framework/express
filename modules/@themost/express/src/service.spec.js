@@ -310,5 +310,21 @@ describe('serviceRouter', () => {
             expect(x).toBeTruthy();
         });
     });
+    fit('should query products with text', async () => {
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .get('/api/products/')
+            .query({
+                $search: `"Retina Display"`
+            })
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.value).toBeInstanceOf(Array);
+    });
 
 });
