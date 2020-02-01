@@ -15,6 +15,7 @@ const configurationProperty = Symbol('configuration');
 const applicationProperty = Symbol('application');
 const unattendedProperty = Symbol('unattended');
 import {serviceRouter} from './service';
+import { ResponseFormatter } from "./formatter";
 
 /**
  *
@@ -53,6 +54,8 @@ class ExpressDataApplication extends IApplication {
         this[configurationProperty].useStrategy(DataConfigurationStrategy, DataConfigurationStrategy);
         // use default model builder
         this.useModelBuilder();
+        // use default formatters
+        this.useService(ResponseFormatter)
         // use application service router to allow service router extensions
         this.useService(ApplicationServiceRouter);
         // register configuration services

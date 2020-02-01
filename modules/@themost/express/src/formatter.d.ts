@@ -24,5 +24,6 @@ export declare class XmlResponseFormatter extends HttpResponseFormatter {
 }
 
 export declare class ResponseFormatter extends ApplicationService {
+    formatters: Map<string, Function>;
     for(data: any, req: Request, res: Response, next: Function): ResponseFormatter;
 }
