@@ -5,7 +5,7 @@ import express from 'express';
 import passport from 'passport';
 import {TestPassportStrategy} from './passport.spec';
 import {ResponseFormatter} from './formatter';
-fdescribe('ResponseFormatter', () => {
+describe('ResponseFormatter', () => {
    
     /**
      * express application for testing
