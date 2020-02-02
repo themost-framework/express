@@ -23,7 +23,11 @@ export declare class XmlResponseFormatter extends HttpResponseFormatter {
 
 }
 
+export declare interface ResponseFormatterWrapper {
+    for(req: Request, res: Response): any;
+}
+
 export declare class ResponseFormatter extends ApplicationService {
     formatters: Map<string, Function>;
-    for(data: any, req: Request, res: Response, next: Function): ResponseFormatter;
+    format(data?: any): ResponseFormatterWrapper;
 }

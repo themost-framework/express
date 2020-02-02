@@ -40,7 +40,7 @@ describe('ResponseFormatter', () => {
 
     it('should get formatter instance', async () => {
         const reponseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
-        expect(reponseFormatter.for({
+        expect(reponseFormatter.format({
             message: 'hey'
         })).toBeTruthy();
     });
@@ -49,9 +49,9 @@ describe('ResponseFormatter', () => {
 
         testRouter.get('/message', (req, res, next) => {
             const responseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
-            res.format(responseFormatter.for({
+            res.format(responseFormatter.format({
                 message: 'hey'
-            }, req, res, next));
+            }).for(req, res));
         });
 
         let response = await request(app)
@@ -77,9 +77,9 @@ describe('ResponseFormatter', () => {
 
         testRouter.get('/message', (req, res, next) => {
             const reponseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
-            res.format(reponseFormatter.for({
+            res.format(reponseFormatter.format({
                 message: 'hey'
-            }, req, res, next));
+            }).for(req, res));
         });
 
         let response = await request(app)

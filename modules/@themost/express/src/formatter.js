@@ -28,7 +28,7 @@ class HttpResponseFormatter {
      * @param {Response} res 
      */
     // eslint-disable-next-line no-unused-vars
-    async execute(req, res) {
+    execute(req, res) {
         throw new AbstractMethodError();
     }
 }
@@ -40,7 +40,7 @@ class XmlResponseFormatter extends HttpResponseFormatter {
      * @param {Response} res 
      */
     // eslint-disable-next-line no-unused-vars
-    async execute(req, res) {
+    execute(req, res) {
         if (this.data == null) {
             res.status(204).type('application/xml').send();
         }
@@ -59,7 +59,7 @@ class JsonResponseFormatter extends HttpResponseFormatter {
      * @param {Function} next 
      */
     // eslint-disable-next-line no-unused-vars
-    async execute(req, res) {
+    execute(req, res) {
         res.json(this.data);
     }
 }
@@ -75,32 +75,28 @@ class ResponseFormatter extends ApplicationService {
         this.formatters.set('default', JsonResponseFormatter);
         // add application/json formatter
         this.formatters.set('application/json', JsonResponseFormatter);
-        // add application/xml formatter
-        this.formatters.set('application/xml', XmlResponseFormatter);
     }
 
-    /**
-     * Returns a formatter object for Response.format() method
-     * @param {Response} res
-     * @param {*} data 
-     */
-    for(data, req, res, next) {
-        const dictionary = {};
-        this.formatters.forEach((value, key) => {
-            const FormatterCtor = value;
-            Object.defineProperty(dictionary, key, {
-                enumerable: true,
-                configurable: true,
-                get: function () {
-                    return function() {
-                        return new FormatterCtor(data).execute(req, res).catch( err => {
-                            return next(err);
-                        });
-                    }
-                }
-            });
-        });
-        return dictionary;
+
+    format(data) {
+        return {
+            for: (req, res) => {
+                const dictionary = {};
+                this.formatters.forEach((value, key) => {
+                    const FormatterCtor = value;
+                    Object.defineProperty(dictionary, key, {
+                        enumerable: true,
+                        configurable: true,
+                        get: function () {
+                            return function() {
+                                return new FormatterCtor(data).execute(req, res);
+                            };
+                        }
+                    });
+                });
+                return dictionary;
+            }
+        }
     }
 
 }
