@@ -4,7 +4,7 @@ import request from 'supertest';
 import express from 'express';
 import passport from 'passport';
 import {TestPassportStrategy} from './passport.spec';
-import {ResponseFormatter} from './formatter';
+import {ResponseFormatter, XmlResponseFormatter} from './formatter';
 describe('ResponseFormatter', () => {
    
     /**
@@ -75,15 +75,16 @@ describe('ResponseFormatter', () => {
 
     it('should use formatter to get xml', async () => {
 
-        testRouter.get('/message', (req, res, next) => {
-            const reponseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
-            res.format(reponseFormatter.format({
+        const responseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
+        responseFormatter.formatters.set('application/xml', XmlResponseFormatter);
+        testRouter.get('/newMessage', (req, res, next) => {
+            res.format(responseFormatter.format({
                 message: 'hey'
             }).for(req, res));
         });
 
         let response = await request(app)
-            .get('/message')
+            .get('/newMessage')
             .set('Accept', 'application/xml');
         expect(response.status).toBe(200);
         expect(response.text).toBeTruthy();
