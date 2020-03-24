@@ -62,8 +62,10 @@ describe('ExpressDataApplication', () => {
         // use data middleware (register req.context)
         app.use(dataApplication.middleware(app));
         // use test passport strategy
+        // noinspection JSCheckFunctionSignatures
         passport.use(passportStrategy);
         // set testRouter
+        // noinspection JSCheckFunctionSignatures
         app.use('/', passport.authenticate('bearer', { session: false }), testRouter);
     });
 
