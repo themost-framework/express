@@ -134,11 +134,20 @@ Use ExpressDataApplication#container to access and extend parent application. Th
     export class MyApplicationService extends IApplication {
         constructor(app) {
             super(app);
-            app.container.get('/message', (req, res) => {
+            const newRouter = express.Router();
+            newRouter.get('/message', (req, res) => {
                 return res.json({
-                    message: 'Hello World!'
+                    message: 'Hello World'
                 });
             });
+            // get app stack
+            const stack = app.container._router.stack;
+            // find dataContextMiddleware
+            const findIndex = stack.findIndex(item => {
+                return item.name === 'dataContextMiddleware';
+            });
+            // insert routes
+            stack.splice(findIndex, 0, ...newRouter.stack);
         }
     }
     
@@ -177,8 +186,3 @@ ApplicationServiceRouter may be extended to include extra service endpoints:
             serviceRouter.stack.unshift.apply(serviceRouter.stack, newRouter.stack);
         }
     }
-    
-    
-    
-
-
