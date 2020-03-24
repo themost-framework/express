@@ -10,7 +10,7 @@
  import {ConfigurationBase} from '@themost/common/config';
  import {DefaultDataContext} from '@themost/data/data-context';
  import {ODataModelBuilder} from '@themost/data/odata';
- import {RequestHandler, Router} from 'express';
+ import {RequestHandler, Router, Application} from 'express';
 
  export declare class ApplicationServiceRouter implements IApplicationService {
      public serviceRouter: Router;
@@ -20,6 +20,8 @@
  export declare class ExpressDataApplication {
 
      constructor(configurationPath?: string);
+
+     public readonly container: Application;
 
      public useModelBuilder(): ODataModelBuilder;
 

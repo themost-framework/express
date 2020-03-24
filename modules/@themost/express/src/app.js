@@ -201,6 +201,12 @@ class ExpressDataApplication extends IApplication {
      */
     middleware(app) {
       const thisApp = this;
+      // define application container
+      Object.defineProperty(this, 'container', {
+        value: app,
+        enumerable: false,
+        writable: false
+      });
       // noinspection JSUnresolvedVariable
         if (app && app.engines) {
             // get express application engines
