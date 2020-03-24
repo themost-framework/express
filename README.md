@@ -55,7 +55,7 @@ Use @themost/data application as an express middleware:
       reviver: dateReviver 
     }));
     // use data application middleware
-    app.use(dataApplication.middleware());
+    app.use(dataApplication.middleware(app));
     
 Use the service router for serving all the available data models:
     
@@ -124,3 +124,61 @@ or use the traditional way of serving data:
           return next(err);
       });
     });
+
+### Extend application container
+
+Use ExpressDataApplication#container to access and extend parent application. The following example represents an application service which extends container application router
+
+    # MyApplicationService.js
+ 
+    export class MyApplicationService extends IApplication {
+        constructor(app) {
+            super(app);
+            app.container.get('/message', (req, res) => {
+                return res.json({
+                    message: 'Hello World!'
+                });
+            });
+        }
+    }
+    
+    
+    # app.js
+    import {MyApplicationService} from './MyApplicationService';
+    ...
+    // use data application middleware
+    app.use(dataApplication.middleware(app));
+    // add application service
+    dataApplication.useService(MyApplicationService);
+    
+### Extend service router
+
+ApplicationServiceRouter may be extended to include extra service endpoints:
+
+    # MyApplicationService.js
+ 
+    export class MyApplicationService extends IApplication {
+        constructor(app) {
+            super(app);
+            /**
+             * get application service router
+             * @type {e.Router}
+             */
+            const serviceRouter = app.getService(ApplicationServiceRouter).serviceRouter;
+            const newRouter = express.Router();
+            // add custom route before serviceRouter
+            newRouter.get('/users/me/message', (req, res) => {
+                expect(req.context).toBeTruthy();
+                return res.json({
+                    message: 'Hello World!'
+                });
+            });
+            // add routes
+            serviceRouter.stack.unshift.apply(serviceRouter.stack, newRouter.stack);
+        }
+    }
+    
+    
+    
+
+
