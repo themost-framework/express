@@ -62,8 +62,10 @@ describe('ExpressDataApplication', () => {
         // use data middleware (register req.context)
         app.use(dataApplication.middleware(app));
         // use test passport strategy
+        // noinspection JSCheckFunctionSignatures
         passport.use(passportStrategy);
         // set testRouter
+        // noinspection JSCheckFunctionSignatures
         app.use('/', passport.authenticate('bearer', { session: false }), testRouter);
     });
 
@@ -225,6 +227,115 @@ describe('ExpressDataApplication', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.name).toBe('alexis.rees@example.com');
+
+    });
+
+    it('should use ExpressDataApplication.container', async ()=> {
+        /**
+         * @type {ExpressDataApplication}
+         */
+        const dataApplication = app.get(ExpressDataApplication.name);
+        expect(dataApplication.container).toBeTruthy();
+        // add custom route
+        dataApplication.container.get('/test/message', (req, res) => {
+            return res.json({
+                message: 'Hello World'
+            });
+        });
+        const response = await request(app)
+            .get('/test/message')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('Hello World');
+    });
+
+    it('should insert route', async ()=> {
+
+        /**
+         * @type {ExpressDataApplication}
+         */
+        const dataApplication = app.get(ExpressDataApplication.name);
+        expect(dataApplication.container).toBeTruthy();
+
+        // add custom route before serviceRouter
+        dataApplication.container.get('/api/users/me/message', (req, res) => {
+            return res.json({
+                message: 'Hello World'
+            });
+        });
+        // get app stack
+        const stack = dataApplication.container._router.stack;
+        // get last router
+        const index = stack.length - 1;
+        // get last route
+        const route = stack[index];
+        // remove last router
+        stack.splice(index, 1);
+        // insert last route before dataContextMiddleware
+        const findIndex = stack.findIndex(item => {
+            return item.name === 'dataContextMiddleware';
+        });
+        stack.splice(findIndex, 0, route);
+
+        const response = await request(app)
+            .get('/api/users/me/message')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('Hello World');
+
+    });
+
+
+    it('should multiple routes', async ()=> {
+
+        /**
+         * @type {ExpressDataApplication}
+         */
+        const dataApplication = app.get(ExpressDataApplication.name);
+        expect(dataApplication.container).toBeTruthy();
+
+        const newRouter = express.Router();
+
+        newRouter.get('/custom/b', (req, res) => {
+            return res.json({
+                message: 'b'
+            });
+        });
+
+        newRouter.get('/custom/c', (req, res) => {
+            return res.json({
+                message: 'c'
+            });
+        });
+
+        // get app stack
+        const stack = dataApplication.container._router.stack;
+        // find dataContextMiddleware
+        const findIndex = stack.findIndex(item => {
+            return item.name === 'dataContextMiddleware';
+        });
+        // insert routes
+        stack.splice(findIndex, 0, ...newRouter.stack);
+
+        let response = await request(app)
+            .get('/custom/b')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('b');
+
+        response = await request(app)
+            .get('/custom/c')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('c');
 
     });
 

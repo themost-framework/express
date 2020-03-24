@@ -1,5 +1,5 @@
 import path from 'path';
-import {ExpressDataApplication} from './app';
+import {ApplicationServiceRouter, ExpressDataApplication} from './app';
 import request from 'supertest';
 import express from 'express';
 import BearerStrategy from 'passport-http-bearer';
@@ -325,6 +325,113 @@ describe('serviceRouter', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.value).toBeInstanceOf(Array);
+    });
+
+    it('should insert one route', async ()=> {
+
+        /**
+         * @type {ExpressDataApplication}
+         */
+        const dataApplication = app.get(ExpressDataApplication.name);
+        expect(dataApplication.container).toBeTruthy();
+
+        /**
+         * get application service router
+         * @type {e.Router}
+         */
+        const serviceRouter = dataApplication.getService(ApplicationServiceRouter).serviceRouter;
+
+        // add custom route before serviceRouter
+        serviceRouter.get('/users/me/a', (req, res) => {
+            return res.json({
+                message: 'a custom route'
+            });
+        });
+
+        (function moveLastRoute(router){
+            // get app stack
+            const stack = router.stack;
+            // get last router
+            const index = stack.length - 1;
+            // get last route
+            const route = stack[index];
+            // remove last router
+            stack.splice(index, 1);
+            // move up
+            stack.unshift(route);
+        })(serviceRouter);
+
+        const response = await request(app)
+            .get('/api/users/me/a')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('a custom route');
+    });
+
+    it('should insert multiple routes', async ()=> {
+
+        /**
+         * @type {ExpressDataApplication}
+         */
+        const dataApplication = app.get(ExpressDataApplication.name);
+        expect(dataApplication.container).toBeTruthy();
+
+        /**
+         * get application service router
+         * @type {e.Router}
+         */
+        const serviceRouter = dataApplication.getService(ApplicationServiceRouter).serviceRouter;
+
+        const newRouter = express.Router();
+        // add custom route before serviceRouter
+        newRouter.get('/users/me/b', (req, res) => {
+            expect(req.context).toBeTruthy();
+            return res.json({
+                message: 'b'
+            });
+        });
+
+        newRouter.get('/users/me/c', (req, res) => {
+            expect(req.context).toBeTruthy();
+            return res.json({
+                message: 'c'
+            });
+        });
+
+        // add routes
+        serviceRouter.stack.unshift.apply(serviceRouter.stack, newRouter.stack);
+
+        let response = await request(app)
+            .get('/api/users/me/b')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('b');
+
+        response = await request(app)
+            .get('/api/users/me/c')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('c');
+
+        // finally get user
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        response = await request(app)
+            .get('/api/users/me')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.name).toBe('alexis.rees@example.com');
+
     });
 
 });
