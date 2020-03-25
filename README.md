@@ -131,23 +131,28 @@ Use ExpressDataApplication#container to access and extend parent application. Th
 
     # MyApplicationService.js
  
-    export class MyApplicationService extends IApplication {
+    export class MyApplicationService extends ApplicationService {
         constructor(app) {
             super(app);
-            const newRouter = express.Router();
-            newRouter.get('/message', (req, res) => {
-                return res.json({
-                    message: 'Hello World'
-                });
+            // subscribe for container
+            app.container.subscribe( container => {
+                if (container) {
+                    // create a router
+                    const newRouter = express.Router();
+                    newRouter.get('/message', (req, res) => {
+                        return res.json({
+                            message: 'Hello World'
+                        });
+                    });
+                    newRouter.get('/status', (req, res) => {
+                        return res.json({
+                            status: 'ok'
+                        });
+                    });
+                    // use router
+                    container.use('/a', newRouter);
+                }
             });
-            // get app stack
-            const stack = app.container._router.stack;
-            // find dataContextMiddleware
-            const findIndex = stack.findIndex(item => {
-                return item.name === 'dataContextMiddleware';
-            });
-            // insert routes
-            stack.splice(findIndex, 0, ...newRouter.stack);
         }
     }
     
@@ -164,25 +169,39 @@ Use ExpressDataApplication#container to access and extend parent application. Th
 
 ApplicationServiceRouter may be extended to include extra service endpoints:
 
-    # MyApplicationService.js
+    # ServiceRouterExtension.js
  
-    export class MyApplicationService extends IApplication {
-        constructor(app) {
+    class ServiceRouterExtension extends ApplicationService {
+    constructor(app) {
             super(app);
-            /**
-             * get application service router
-             * @type {e.Router}
-             */
-            const serviceRouter = app.getService(ApplicationServiceRouter).serviceRouter;
-            const newRouter = express.Router();
-            // add custom route before serviceRouter
-            newRouter.get('/users/me/message', (req, res) => {
-                expect(req.context).toBeTruthy();
-                return res.json({
-                    message: 'Hello World!'
+            app.serviceRouter.subscribe( serviceRouter => {
+                // create new router
+                const addRouter = express.Router();
+                addRouter.get('/users/me/status', (req, res) => {
+                    return res.json({
+                        status: 'ok'
+                    });
                 });
+                // insert router at the beginning of serviceRouter.stack
+                serviceRouter.stack.unshift.apply(serviceRouter.stack, addRouter.stack);
             });
-            // add routes
-            serviceRouter.stack.unshift.apply(serviceRouter.stack, newRouter.stack);
         }
     }
+
+    # app.js
+
+    const app = express();
+    // create a new instance of data application
+    const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+    // use extension
+    application.useService(ServiceRouterExtension);
+    app.use(express.json({
+        reviver: dateReviver
+    }));
+    // hold data application
+    app.set('ExpressDataApplication', application);
+    // use data middleware (register req.context)
+    app.use(application.middleware(app));
+    ...
+    // user service router
+    app.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);

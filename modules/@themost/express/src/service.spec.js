@@ -6,6 +6,25 @@ import BearerStrategy from 'passport-http-bearer';
 import passport from 'passport';
 import {serviceRouter} from './service';
 import {dateReviver} from './helpers';
+import { ApplicationService } from '@themost/common';
+
+class ServiceRouterExtension extends ApplicationService {
+    constructor(app) {
+        super(app);
+        app.serviceRouter.subscribe( serviceRouter => {
+            // create new router
+            const addRouter = express.Router();
+            addRouter.get('/users/me/status', (req, res) => {
+                return res.json({
+                    status: 'ok'
+                });
+            });
+            // insert router at the beggining of serviceRouter.stack
+            serviceRouter.stack.unshift.apply(serviceRouter.stack, addRouter.stack);
+        });
+    }
+}
+
 /**
  * A passport strategy for testing purposes
  */
@@ -431,6 +450,39 @@ describe('serviceRouter', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.name).toBe('alexis.rees@example.com');
+
+    });
+
+    it('should extend service router', async () => {
+
+        const app1 = express();
+        // create a new instance of data application
+        const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+        // use extension
+        application.useService(ServiceRouterExtension);
+        app1.use(express.json({
+            reviver: dateReviver
+        }));
+        // hold data application
+        app1.set('ExpressDataApplication', application);
+        // use data middleware (register req.context)
+        app1.use(application.middleware(app1));
+        // use test passport strategy
+        passport.use(passportStrategy);
+        // set service router
+        app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
+
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app1)
+            .get('/api/users/me/status')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.status).toBe('ok');
 
     });
 

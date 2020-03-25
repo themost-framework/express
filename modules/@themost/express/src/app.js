@@ -14,7 +14,8 @@ import {ServicesConfiguration} from "./configuration";
 const configurationProperty = Symbol('configuration');
 const applicationProperty = Symbol('application');
 const unattendedProperty = Symbol('unattended');
-import {serviceRouter} from './service';
+const { serviceRouter } = require('./service');
+const { BehaviorSubject } = require ('rxjs');
 
 /**
  *
@@ -41,6 +42,8 @@ class ApplicationServiceRouter extends ApplicationService {
 class ExpressDataApplication extends IApplication {
     constructor(configurationPath) {
         super();
+        // add container property as behavior subject
+        this.container = new BehaviorSubject(null);
         //initialize services
         Object.defineProperty(this, 'services', {
             value: { },
@@ -55,6 +58,8 @@ class ExpressDataApplication extends IApplication {
         this.useModelBuilder();
         // use application service router to allow service router extensions
         this.useService(ApplicationServiceRouter);
+        // add service property as behavior subject
+        this.serviceRouter = new BehaviorSubject(serviceRouter);
         // register configuration services
         ServicesConfiguration.config(this);
 
@@ -201,12 +206,6 @@ class ExpressDataApplication extends IApplication {
      */
     middleware(app) {
       const thisApp = this;
-      // define application container
-      Object.defineProperty(this, 'container', {
-        value: app,
-        enumerable: false,
-        writable: false
-      });
       // noinspection JSUnresolvedVariable
         if (app && app.engines) {
             // get express application engines
@@ -228,6 +227,8 @@ class ExpressDataApplication extends IApplication {
             // set application configuration engines as empty array
             thisApp.getConfiguration().setSourceAt('engines', []);
         }
+        // broadcast container
+        this.container.next(app);
       return function dataContextMiddleware(req, res, next) {
           const context = new ExpressDataContext(thisApp.getConfiguration());
           // define application property

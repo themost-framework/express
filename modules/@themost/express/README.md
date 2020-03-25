@@ -1,3 +1,14 @@
+[![npm](https://img.shields.io/npm/v/@themost%2Fexpress.svg)](https://www.npmjs.com/package/@themost%2Fexpress)
+![](https://github.com/kbarbounakis/most-data-express/workflows/test/badge.svg) 
+![](https://img.shields.io/david/dev/kbarbounakis/most-data-express) ![](https://img.shields.io/david/peer/kbarbounakis/most-data-express?path=modules%2F%40themost%2Fexpress)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dfea8d9613474170b13e298d416c5c37)](https://www.codacy.com/manual/kbarbounakis/most-data-express?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=kbarbounakis/most-data-express&amp;utm_campaign=Badge_Grade)
+![GitHub top language](https://img.shields.io/github/languages/top/kbarbounakis/most-data-express)
+[![License](https://img.shields.io/npm/l/@themost/express.svg)](/LICENSE)
+![GitHub last commit](https://img.shields.io/github/last-commit/kbarbounakis/most-data-express)
+![GitHub Release Date](https://img.shields.io/github/release-date/kbarbounakis/most-data-express)
+[![npm](https://img.shields.io/npm/dw/@themost/data)](https://www.npmjs.com/package/@themost%2Fexpress)
+![Snyk Vulnerabilities for npm package](https://img.shields.io/snyk/vulnerabilities/npm/@themost/express)
+
 ## @themost/express
 MOST Data ORM Extension for ExpressJS
 
@@ -44,7 +55,7 @@ Use @themost/data application as an express middleware:
       reviver: dateReviver 
     }));
     // use data application middleware
-    app.use(dataApplication.middleware());
+    app.use(dataApplication.middleware(app));
     
 Use the service router for serving all the available data models:
     
@@ -113,3 +124,85 @@ or use the traditional way of serving data:
           return next(err);
       });
     });
+
+### Extend application container
+
+Use ExpressDataApplication#container to access and extend parent application. The following example represents an application service which extends container application router
+
+    # MyApplicationService.js
+ 
+    export class MyApplicationService extends ApplicationService {
+        constructor(app) {
+            super(app);
+            // subscribe for container
+            app.container.subscribe( container => {
+                if (container) {
+                    // create a router
+                    const newRouter = express.Router();
+                    newRouter.get('/message', (req, res) => {
+                        return res.json({
+                            message: 'Hello World'
+                        });
+                    });
+                    newRouter.get('/status', (req, res) => {
+                        return res.json({
+                            status: 'ok'
+                        });
+                    });
+                    // use router
+                    container.use('/a', newRouter);
+                }
+            });
+        }
+    }
+    
+    
+    # app.js
+    import {MyApplicationService} from './MyApplicationService';
+    ...
+    // use data application middleware
+    app.use(dataApplication.middleware(app));
+    // add application service
+    dataApplication.useService(MyApplicationService);
+    
+### Extend service router
+
+ApplicationServiceRouter may be extended to include extra service endpoints:
+
+    # ServiceRouterExtension.js
+ 
+    class ServiceRouterExtension extends ApplicationService {
+    constructor(app) {
+            super(app);
+            app.serviceRouter.subscribe( serviceRouter => {
+                // create new router
+                const addRouter = express.Router();
+                addRouter.get('/users/me/status', (req, res) => {
+                    return res.json({
+                        status: 'ok'
+                    });
+                });
+                // insert router at the beginning of serviceRouter.stack
+                serviceRouter.stack.unshift.apply(serviceRouter.stack, addRouter.stack);
+            });
+        }
+    }
+
+    # app.js
+
+    const app = express();
+    // create a new instance of data application
+    const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+    // use extension
+    application.useService(ServiceRouterExtension);
+    app.use(express.json({
+        reviver: dateReviver
+    }));
+    // hold data application
+    app.set('ExpressDataApplication', application);
+    // use data middleware (register req.context)
+    app.use(application.middleware(app));
+    // use test passport strategy
+    passport.use(passportStrategy);
+    // use service router
+    app.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);

@@ -3,7 +3,7 @@ import path from 'path';
 import {ExpressDataApplication, ApplicationServiceRouter} from './index';
 import request from 'supertest';
 import express from 'express';
-import {HttpNotFoundError} from '@themost/common';
+import {HttpNotFoundError, ApplicationService} from '@themost/common';
 import BearerStrategy from 'passport-http-bearer';
 import passport from 'passport';
 import {DefaultDataContext, ODataModelBuilder, DataConfigurationStrategy} from "@themost/data";
@@ -36,6 +36,31 @@ class TestPassportStrategy extends BearerStrategy {
         const self = this;
         return self._verify(req, null, ()=> {
             return self.success(self.getUser());
+        });
+    }
+}
+
+class MyApplicationService extends ApplicationService {
+    constructor(app) {
+        super(app);
+        // subscribe for container
+        app.container.subscribe( container => {
+            if (container) {
+                // create a router
+                const newRouter = express.Router();
+                newRouter.get('/message', (req, res) => {
+                    return res.json({
+                        message: 'Hello World'
+                    });
+                });
+                newRouter.get('/status', (req, res) => {
+                    return res.json({
+                        status: 'ok'
+                    });
+                });
+                // use router
+                container.use('/s', newRouter);
+            }
         });
     }
 }
@@ -230,25 +255,75 @@ describe('ExpressDataApplication', () => {
 
     });
 
-    it('should use ExpressDataApplication.container', async ()=> {
+    it('should use container', async ()=> {
         /**
          * @type {ExpressDataApplication}
          */
-        const dataApplication = app.get(ExpressDataApplication.name);
-        expect(dataApplication.container).toBeTruthy();
-        // add custom route
-        dataApplication.container.get('/test/message', (req, res) => {
-            return res.json({
-                message: 'Hello World'
-            });
+        const application = app.get(ExpressDataApplication.name);
+        expect(application.container).toBeTruthy();
+        // subscribe for container
+        application.container.subscribe( container => {
+            if (container) {
+                // create a router
+                const newRouter = express.Router();
+                newRouter.get('/message', (req, res) => {
+                    return res.json({
+                        message: 'Hello World'
+                    });
+                });
+                newRouter.get('/status', (req, res) => {
+                    return res.json({
+                        status: 'ok'
+                    });
+                });
+                // use router
+                container.use('/a', newRouter);
+            }
         });
-        const response = await request(app)
-            .get('/test/message')
+        let response = await request(app)
+            .get('/a/message')
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.message).toBe('Hello World');
+
+        response = await request(app)
+            .get('/a/status')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.status).toBe('ok');
+    });
+
+    it('should use container in service', async ()=> {
+        
+        const app1 = express();
+        // create a new instance of data application
+        const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+        // use service
+        application.useService(MyApplicationService);
+        // hold data application
+        app1.set('ExpressDataApplication', application);
+        // use data middleware (register req.context)
+        app1.use(application.middleware(app1));
+        
+        let response = await request(app1)
+            .get('/s/message')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.message).toBe('Hello World');
+
+        response = await request(app1)
+            .get('/s/status')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.status).toBe('ok');
     });
 
     it('should insert route', async ()=> {
@@ -257,27 +332,29 @@ describe('ExpressDataApplication', () => {
          * @type {ExpressDataApplication}
          */
         const dataApplication = app.get(ExpressDataApplication.name);
-        expect(dataApplication.container).toBeTruthy();
-
-        // add custom route before serviceRouter
-        dataApplication.container.get('/api/users/me/message', (req, res) => {
-            return res.json({
-                message: 'Hello World'
-            });
+        // subscribe for container
+        dataApplication.container.subscribe( container => {
+            if (container) {
+                container.get('/api/users/me/message', (req, res) => {
+                    return res.json({
+                        message: 'Hello World'
+                    });
+                });
+                // get app stack
+                const stack = container._router.stack;
+                // get last router
+                const index = stack.length - 1;
+                // get last route
+                const route = stack[index];
+                // remove last router
+                stack.splice(index, 1);
+                // insert last route before dataContextMiddleware
+                const findIndex = stack.findIndex(item => {
+                    return item.name === 'dataContextMiddleware';
+                });
+                stack.splice(findIndex, 0, route);
+            }
         });
-        // get app stack
-        const stack = dataApplication.container._router.stack;
-        // get last router
-        const index = stack.length - 1;
-        // get last route
-        const route = stack[index];
-        // remove last router
-        stack.splice(index, 1);
-        // insert last route before dataContextMiddleware
-        const findIndex = stack.findIndex(item => {
-            return item.name === 'dataContextMiddleware';
-        });
-        stack.splice(findIndex, 0, route);
 
         const response = await request(app)
             .get('/api/users/me/message')
@@ -289,38 +366,35 @@ describe('ExpressDataApplication', () => {
 
     });
 
-
     it('should multiple routes', async ()=> {
-
         /**
          * @type {ExpressDataApplication}
          */
         const dataApplication = app.get(ExpressDataApplication.name);
-        expect(dataApplication.container).toBeTruthy();
-
-        const newRouter = express.Router();
-
-        newRouter.get('/custom/b', (req, res) => {
-            return res.json({
-                message: 'b'
+        // subscribe for container
+        dataApplication.container.subscribe( container => {
+            const newRouter = express.Router();
+            newRouter.get('/custom/b', (req, res) => {
+                return res.json({
+                    message: 'b'
+                });
             });
-        });
-
-        newRouter.get('/custom/c', (req, res) => {
-            return res.json({
-                message: 'c'
+            newRouter.get('/custom/c', (req, res) => {
+                return res.json({
+                    message: 'c'
+                });
             });
+            // get app stack
+            const stack = container._router.stack;
+            // find dataContextMiddleware
+            const findIndex = stack.findIndex(item => {
+                return item.name === 'dataContextMiddleware';
+            });
+            // insert routes
+            stack.splice(findIndex, 0, ...newRouter.stack);
         });
 
-        // get app stack
-        const stack = dataApplication.container._router.stack;
-        // find dataContextMiddleware
-        const findIndex = stack.findIndex(item => {
-            return item.name === 'dataContextMiddleware';
-        });
-        // insert routes
-        stack.splice(findIndex, 0, ...newRouter.stack);
-
+        
         let response = await request(app)
             .get('/custom/b')
             .set('Content-Type', 'application/json')

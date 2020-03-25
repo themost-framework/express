@@ -37,7 +37,8 @@
     "pluralize": "^7.0.0",
     "q": "^1.5.1",
     "symbol": "^0.3.1",
-    "express": "^4.16.3"
+    "express": "^4.16.3",
+    "rxjs": "^6.5.4"
   },
   "eslintConfig": {
     "env": {
