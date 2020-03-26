@@ -167,7 +167,7 @@ Use ExpressDataApplication#container to access and extend parent application. Th
     
 ### Extend service router
 
-ApplicationServiceRouter may be extended to include extra service endpoints:
+`@themost/express#serviceRouter` router may be extended to include extra service endpoints:
 
     # ServiceRouterExtension.js
  

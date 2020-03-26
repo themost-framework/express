@@ -167,7 +167,7 @@ Use ExpressDataApplication#container to access and extend parent application. Th
     
 ### Extend service router
 
-ApplicationServiceRouter may be extended to include extra service endpoints:
+`@themost/express#serviceRouter` router may be extended to include extra service endpoints:
 
     # ServiceRouterExtension.js
  
@@ -202,7 +202,6 @@ ApplicationServiceRouter may be extended to include extra service endpoints:
     app.set('ExpressDataApplication', application);
     // use data middleware (register req.context)
     app.use(application.middleware(app));
-    // use test passport strategy
-    passport.use(passportStrategy);
-    // use service router
+    ...
+    // user service router
     app.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
