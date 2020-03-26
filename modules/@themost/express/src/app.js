@@ -10,12 +10,12 @@ import Symbol from "symbol";
 import {Args, ConfigurationBase, ApplicationService, IApplication} from "@themost/common";
 import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuilder, ODataModelBuilder} from "@themost/data";
 import {ServicesConfiguration} from "./configuration";
+import {serviceRouter} from './service';
+import {BehaviorSubject} from 'rxjs';
 
 const configurationProperty = Symbol('configuration');
 const applicationProperty = Symbol('application');
 const unattendedProperty = Symbol('unattended');
-const { serviceRouter } = require('./service');
-const { BehaviorSubject } = require ('rxjs');
 
 /**
  *
