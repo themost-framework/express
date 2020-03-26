@@ -6,11 +6,10 @@
  * found in the LICENSE file at https://themost.io/license
  */
 
- import {IApplication, IApplicationService} from '@themost/common/app';
- import {ConfigurationBase} from '@themost/common/config';
- import {DefaultDataContext} from '@themost/data/data-context';
- import {ODataModelBuilder} from '@themost/data/odata';
+ import {IApplication, IApplicationService, ConfigurationBase} from '@themost/common';
+ import {DefaultDataContext, ODataModelBuilder} from '@themost/data';
  import {RequestHandler, Router, Application} from 'express';
+ import {BehaviorSubject} from 'rxjs';
 
  export declare class ApplicationServiceRouter implements IApplicationService {
      public serviceRouter: Router;
@@ -21,7 +20,9 @@
 
      constructor(configurationPath?: string);
 
-     public readonly container: Application;
+     public readonly container: BehaviorSubject<Application>;
+
+     public readonly serviceRouter: BehaviorSubject<Router>;
 
      public useModelBuilder(): ODataModelBuilder;
 
