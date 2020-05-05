@@ -10,6 +10,7 @@ import _ from "lodash";
 import Q from "q";
 import {ODataModelBuilder, EdmMapping, DataQueryable} from "@themost/data";
 import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError} from '@themost/common';
+import { ResponseFormatter } from "./formatter";
 const parseBoolean = LangUtils.parseBoolean;
 const DefaultTopOption = 25;
 /**
@@ -113,6 +114,22 @@ const DefaultTopOption = 25;
  * @name EntityOptions#entityFunctionFrom
  * @returns string
  */
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+function tryFormat(data, req, res) {
+    // get response formatter
+    const responseFormatter = req.context.getApplication().getStrategy(ResponseFormatter);
+    //if service exists
+    if (responseFormatter) {
+        // call Response.format with formatter
+        return res.format(responseFormatter.format(data).for(req, res));
+    }
+    return res.json(data);
+ }
 
 /**
  * Binds current request to an entitySet for further processing
@@ -260,11 +277,13 @@ function getEntitySet(options) {
         }, req.query)).then(q => {
             if (count) {
                 return q.getList().then(result => {
-                    return res.json(req.entitySet.mapInstanceSet(req.context, result));
+                    const data = req.entitySet.mapInstanceSet(req.context, result);
+                    return tryFormat(data, req, res);
                 });
             }
             return q.getItems().then(result => {
-                return res.json(req.entitySet.mapInstanceSet(req.context, result));
+                const data = req.entitySet.mapInstanceSet(req.context, result);
+                return tryFormat(data, req, res);
             });
 
         }).catch(err => {
@@ -312,7 +331,7 @@ function postEntitySet(options) {
             return next(new HttpBadRequestError());
         }
         thisModel.save(req.body).then(() => {
-            return res.json(req.body);
+            return tryFormat(req.body, req, res);
         }).catch(err => {
             return next(err);
         });
@@ -356,7 +375,7 @@ function deleteEntitySet(options) {
             return next(new HttpBadRequestError());
         }
         thisModel.remove(req.body).then(() => {
-            return res.json(req.body);
+            return tryFormat(req.body, req, res);
         }).catch(err => {
             return next(err);
         });
@@ -407,7 +426,7 @@ function getEntity(options) {
                     return next();
                 }
                 // othwerwise return object
-                return res.json(value);
+                return tryFormat(value, req, res);
             });
         }).catch(err => {
             return next(err);
@@ -455,7 +474,7 @@ function deleteEntity(options) {
             };
             //try to delete
             return thisModel.remove(obj).then(() => {
-                return res.json(obj);
+                return tryFormat(obj, req, res);
             });
         }).catch(err => {
             return next(err);
@@ -512,7 +531,7 @@ function postEntity(options) {
             obj[thisModel.primaryKey] = key;
             // try to save
             return thisModel.save(obj).then(() => {
-                return res.json(obj);
+                return tryFormat(obj, req, res);
             });
         }).catch(err => {
             return next(err);
@@ -616,17 +635,19 @@ function getEntityNavigationProperty(options) {
                     if (count) {
                         return junction.getList().then(result => {
                             if (returnEntitySet) {
-                                return res.json(returnEntitySet.mapInstanceSet(req.context, result));
+                                const data = returnEntitySet.mapInstanceSet(req.context, result);
+                                return tryFormat(data, req, res);
                             }
-                            return res.json(result);
+                            return tryFormat(result, req, res);
                         });
                     }
                     else {
                         return junction.getItems().then(result => {
                             if (returnEntitySet) {
-                                return res.json(returnEntitySet.mapInstanceSet(req.context, result));
+                                const data = returnEntitySet.mapInstanceSet(req.context, result);
+                                return tryFormat(data, req, res);
                             }
-                            return res.json(result);
+                            return tryFormat(result, req, res);
                         });
                     }
                 });
@@ -644,17 +665,19 @@ function getEntityNavigationProperty(options) {
                     if (count) {
                         return q.where(mapping.childField).equal(key).getList().then(result => {
                             if (returnEntitySet) {
-                                return res.json(returnEntitySet.mapInstanceSet(req.context, result));
+                                const data = returnEntitySet.mapInstanceSet(req.context, result);
+                                return tryFormat(data, req, res);
                             }
-                            return res.json(result);
+                            return tryFormat(result, req, res);
                         });
                     }
                     else {
                         return q.where(mapping.childField).equal(key).getItems().then(result => {
                             if (returnEntitySet) {
-                                return res.json(returnEntitySet.mapInstanceSet(req.context, result));
+                                const data = returnEntitySet.mapInstanceSet(req.context, result);
+                                return tryFormat(data, req, res);
                             }
-                            return res.json(result);
+                            return tryFormat(result, req, res);
                         });
                     }
                 });
@@ -685,7 +708,7 @@ function getEntityNavigationProperty(options) {
                 }
                 // select identifier and navigation property and also expand navigation prop
                 return thisModel.where(thisModel.primaryKey).equal(obj.id).select(thisModel.primaryKey,navigationProperty).expand(navigationPropertyExpand).getItem().then(result => {
-                    return res.json(result[navigationProperty]);
+                    return tryFormat(result[navigationProperty], req, res);
                 });
             }
             else {
@@ -806,7 +829,7 @@ function getEntitySetFunction(options) {
                                             entityFunctionFrom: '_entityFunction'
                                         })(req, res, next);
                                     }
-                                    return res.json(result);
+                                    return tryFormat(result, req, res);
                                 });
                             });
                         }
@@ -824,16 +847,18 @@ function getEntitySetFunction(options) {
                             if (count) {
                                 return q1.getList().then(result => {
                                     if (returnEntitySet) {
-                                        return res.json(returnEntitySet.mapInstance(req.context, result));
+                                        const data = returnEntitySet.mapInstance(req.context, result);
+                                        return tryFormat(data, req, res);
                                     }
-                                    return res.json(result);
+                                    return tryFormat(result, req, res);
                                 });
                             }
                             return q1.getItems().then(result => {
                                 if (returnEntitySet) {
-                                    return res.json(returnEntitySet.mapInstance(req.context, result));
+                                    const data = returnEntitySet.mapInstance(req.context, result);
+                                    return tryFormat(data, req, res);
                                 }
-                                return res.json(result);
+                                return tryFormat(result, req, res);
                             });
                         });
                     }
@@ -862,7 +887,7 @@ function getEntitySetFunction(options) {
                     }
                     if (_.isNil(navigationProperty)) {
                         if (returnsCollection) {
-                            return res.json(result);
+                            return tryFormat(result, req, res);
                         }
                         else {
                             if (Array.isArray(result)) {
@@ -871,13 +896,13 @@ function getEntitySetFunction(options) {
                                     return res.send(204);
                                 }
                                 // get first item only
-                                return res.json(result[0]);
+                                return tryFormat(result[0], req, res);
                             }
                             // send no content if empty
                             if (typeof result === 'undefined') {
                                 return res.send(204);
                             }
-                            return res.json(result);
+                            return tryFormat(result, req, res);
                         }
                     }
                     if (_.isNil(returnEntitySet)) {
@@ -1118,15 +1143,16 @@ function postEntitySetAction(options) {
                         return result.getItems().then(finalResult => {
                             //return result
                             if (returnEntitySet) {
-                                return res.json(returnEntitySet.mapInstanceSet(req.context,finalResult));
+                                const data = returnEntitySet.mapInstanceSet(req.context, finalResult);
+                                return tryFormat(data, req, res);
                             }
-                            return res.json(finalResult);
+                            return tryFormat(finalResult, req, res);
                         });
                     }
                     else {
                         // otherwise call DataModel.getItem() to get only the first item of the result set
                         return result.getItem().then(finalResult => {
-                            return res.json(finalResult);
+                            return tryFormat(finalResult, req, res);
                         });
                     }
                 }
@@ -1135,7 +1161,7 @@ function postEntitySetAction(options) {
                     return res.status(204).send();
                 }
                 // return result as native object
-                return res.json(result);
+                return tryFormat(result, req, res);
             }).catch(err => {
                 return next(err);
             });
@@ -1249,7 +1275,7 @@ function getEntityFunction(options) {
                                         return next(new HttpNotFoundError());
                                     }
                                     //return result
-                                    return res.json(result);
+                                    return tryFormat(result, req, res);
                                 });
                             });
                         }
@@ -1264,21 +1290,23 @@ function getEntityFunction(options) {
                                 return q1.getList().then(result => {
                                     //return result
                                     if (returnEntitySet) {
-                                        return res.json(returnEntitySet.mapInstanceSet(req.context,result));
+                                        const data = returnEntitySet.mapInstanceSet(req.context, result);
+                                        return tryFormat(data, req, res);
                                     }
-                                    return res.json(result);
+                                    return tryFormat(result, req, res);
                                 });
                             }
                             return q1.getItems().then(result => {
                                 //return result
                                 if (returnEntitySet) {
-                                    return res.json(returnEntitySet.mapInstanceSet(req.context,result));
+                                    const data = returnEntitySet.mapInstanceSet(req.context, result);
+                                    return tryFormat(data, req, res);
                                 }
-                                return res.json(result);
+                                return tryFormat(result, req, res);
                             });
                         });
                     }
-                    return res.json(result);
+                    return tryFormat(result, req, res);
                 });
             }
             // entity type does not have an instance method with the given name, continue
@@ -1382,15 +1410,16 @@ function postEntityAction(options) {
                             // an action that returns a collection of objects must always return a native array (without paging parameters)
                             return result.getItems().then(finalResult => {
                                 if (returnEntitySet) {
-                                    return res.json(returnEntitySet.mapInstanceSet(req.context, finalResult));
+                                    const data = returnEntitySet.mapInstanceSet(req.context, finalResult);
+                                    return tryFormat(data, req, res);
                                 }
-                                return res.json(finalResult);
+                                return tryFormat(finalResult, req, res);
                             });
                         }
                         else {
                             // otherwise call DataModel.getItem() to get only the first item of the result set
                             return result.getItem().then(finalResult => {
-                                return res.json(finalResult);
+                                return tryFormat(finalResult, req, res);
                             });
                         }
                     }
@@ -1400,9 +1429,10 @@ function postEntityAction(options) {
                     }
                     // return result as native object
                     if (returnsCollection && returnEntitySet) {
-                        return res.json(returnEntitySet.mapInstanceSet(req.context, result));
+                        const data = returnEntitySet.mapInstanceSet(req.context, result);
+                        return tryFormat(data, req, res);
                     }
-                    return res.json(result);
+                    return tryFormat(result, req, res);
                 });
             }
             // entity type does not have an instance method with the given name, continue
