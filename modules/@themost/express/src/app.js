@@ -12,7 +12,6 @@ import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuild
 import {ServicesConfiguration} from "./configuration";
 import {serviceRouter} from './service';
 import {BehaviorSubject} from 'rxjs';
-import {ResponseFormatter} from "./formatter";
 
 const configurationProperty = Symbol('configuration');
 const applicationProperty = Symbol('application');
