@@ -486,4 +486,42 @@ describe('serviceRouter', () => {
 
     });
 
+    it('should use stream formatter', async () => {
+
+        const app1 = express();
+        // create a new instance of data application
+        const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+
+        app1.use(express.json({
+            reviver: dateReviver
+        }));
+        // hold data application
+        app1.set('ExpressDataApplication', application);
+        // use data middleware (register req.context)
+        app1.use(application.middleware(app1));
+        // use test passport strategy
+        passport.use(passportStrategy);
+        // set service router
+        app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
+
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app1)
+            .get('/api/users/me/avatar')
+            .set('Accept', 'image/png');
+        expect(response.status).toBe(200);
+        expect(response.type).toBe('image/png');
+        expect(response.body).toBeInstanceOf(Buffer);
+
+        response = await request(app1)
+            .post('/api/users/me/anotherAvatar')
+            .set('Accept', 'image/png');
+        expect(response.status).toBe(200);
+        expect(response.type).toBe('application/octet-stream');
+        expect(response.body).toBeInstanceOf(Buffer);
+
+    });
+
 });
