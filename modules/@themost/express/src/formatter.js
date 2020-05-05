@@ -79,11 +79,11 @@ class ResponseFormatter extends ApplicationService {
 
 
     format(data) {
-        // eslint-disable-next-line no-lone-blocks
+        const self = this;
         return {
             for: (req, res) => {
                 const dictionary = {};
-                this.formatters.forEach((value, key) => {
+                self.formatters.forEach((value, key) => {
                     const FormatterCtor = value;
                     // noinspection JSCheckFunctionSignatures
                     Object.defineProperty(dictionary, key, {
@@ -98,7 +98,7 @@ class ResponseFormatter extends ApplicationService {
                 });
                 return dictionary;
             }
-        }
+        };
     }
 
 }
