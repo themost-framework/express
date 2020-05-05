@@ -10,7 +10,7 @@ import _ from "lodash";
 import Q from "q";
 import {ODataModelBuilder, EdmMapping, DataQueryable} from "@themost/data";
 import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError} from '@themost/common';
-import { ResponseFormatter } from "./formatter";
+import { ResponseFormatter, StreamFormatter } from "./formatter";
 const parseBoolean = LangUtils.parseBoolean;
 const DefaultTopOption = 25;
 /**
@@ -115,10 +115,10 @@ const DefaultTopOption = 25;
  * @returns string
  */
 /**
- * 
+ *
+ * @param {*} data
  * @param {*} req 
- * @param {*} res 
- * @param {*} next 
+ * @param {*} res
  */
 function tryFormat(data, req, res) {
     // get response formatter
@@ -130,6 +130,16 @@ function tryFormat(data, req, res) {
     }
     return res.json(data);
  }
+
+/**
+ * @param {*} data
+ * @param {Request|*} req
+ * @param {Response|*} res
+ * @param {NextFunction} next
+ */
+function tryFormatStream(data, req, res, next) {
+    return new StreamFormatter(data).execute(req, res, next);
+}
 
 /**
  * Binds current request to an entitySet for further processing
@@ -775,6 +785,9 @@ function getEntitySetFunction(options) {
             const staticFunc = EdmMapping.hasOwnFunction(DataObjectClass, entitySetFunction);
             if (staticFunc) {
                 return Q.resolve(staticFunc(req.context)).then(result => {
+                    if (func.returnType === 'Edm.Stream') {
+                        return tryFormatStream(result, req, res, next);
+                    }
                     const returnsCollection = _.isString(func.returnCollectionType);
                     let returnEntitySet;
                     if (result instanceof DataQueryable) {
@@ -1127,6 +1140,9 @@ function postEntitySetAction(options) {
             }
             // invoke action
             return Q.resolve(actionFunc.call(null, actionParameters)).then(result => {
+                if (action.returnType === 'Edm.Stream') {
+                    return tryFormatStream(result, req, res, next);
+                }
                 // check if action returns a collection of object
                 const returnsCollection = _.isString(action.returnCollectionType);
                 let returnEntitySet;
@@ -1226,7 +1242,18 @@ function getEntityFunction(options) {
         }
         function tryGetEntity() {
             if (req.entity) {
-                return Q.resolve(req.entity);
+                const ThisModelDataObjectClass = thisModel.getDataObjectType();
+                // data object class is null
+                if (ThisModelDataObjectClass == null) {
+                    // do nothing
+                    return Q.resolve(req.entity);
+                }
+                // entity is already a typed item
+                if (req.entity instanceof  ThisModelDataObjectClass) {
+                    // do nothing
+                    return Q.resolve(req.entity);
+                }
+                return Q.resolve(thisModel.convert(req.entity));
             }
             return thisModel.where(thisModel.primaryKey).equal(req.params[opts.from]).select(thisModel.primaryKey).getTypedItem();
         }
@@ -1253,6 +1280,9 @@ function getEntityFunction(options) {
                     }
                 });
                 return Q.resolve(memberFunc.apply(obj, funcParameters)).then(result => {
+                    if (func.returnType === 'Edm.Stream') {
+                        return tryFormatStream(result, req, res, next);
+                    }
                     if (result instanceof DataQueryable) {
                         if (_.isNil(returnModel)) {
                             return next(new HttpNotFoundError("Result Entity not found"));
@@ -1370,7 +1400,14 @@ function postEntityAction(options) {
         }
         function tryGetEntity() {
             if (req.entity) {
-                return Q.resolve(req.entity);
+                const ThisModelDataObjectClass = thisModel.getDataObjectType();
+                if (ThisModelDataObjectClass == null) {
+                    return Q.resolve(req.entity);
+                }
+                if (req.entity instanceof  ThisModelDataObjectClass) {
+                    return Q.resolve(req.entity);
+                }
+                return Q.resolve(thisModel.convert(req.entity));
             }
             return thisModel.where(thisModel.primaryKey).equal(req.params[opts.from]).select(thisModel.primaryKey).getTypedItem();
         }
@@ -1397,6 +1434,9 @@ function postEntityAction(options) {
                     });
                 }
                 return Q.resolve(memberFunc.apply(obj, actionParameters)).then(result => {
+                    if (action.returnType === 'Edm.Stream') {
+                        return tryFormatStream(result, req, res, next);
+                    }
                     // check if action returns a collection of object
                     const returnsCollection = _.isString(action.returnCollectionType);
                     let returnEntitySet;

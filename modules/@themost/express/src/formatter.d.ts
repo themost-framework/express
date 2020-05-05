@@ -7,12 +7,13 @@
  * Use of this source code is governed by an BSD-3-Clause license that can be
  * found in the LICENSE file at https://themost.io/license
  */
-import { ApplicationService } from "@themost/common";
-import {Response, Request} from 'express';
+import { ApplicationService } from '@themost/common';
+import {NextFunction, Request, Response} from 'express';
 
 export declare class HttpResponseFormatter {
-    data: any;
-    execute(req: Request, res: Response): Promise<any>;
+    public data: any;
+    constructor(app: any);
+    public execute(req: Request, res: Response): Promise<any>;
 }
 
 export declare class JsonResponseFormatter extends HttpResponseFormatter {
@@ -28,6 +29,13 @@ export declare interface ResponseFormatterWrapper {
 }
 
 export declare class ResponseFormatter extends ApplicationService {
-    formatters: Map<string, Function>;
-    format(data?: any): ResponseFormatterWrapper;
+    public formatters: Map<string, () => void>;
+    constructor(app: any);
+    public format(data?: any): ResponseFormatterWrapper;
+}
+
+export declare class StreamFormatter {
+    public data: any;
+    constructor(data: any);
+    public execute(req: Request, res: Response, next: NextFunction): void;
 }

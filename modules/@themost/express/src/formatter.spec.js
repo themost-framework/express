@@ -27,20 +27,22 @@ describe('ResponseFormatter', () => {
         // use data middleware (register req.context)
         app.use(dataApplication.middleware(app));
         // use test passport strategy
+        // noinspection JSCheckFunctionSignatures
         passport.use(passportStrategy);
         // set testRouter
+        // noinspection JSCheckFunctionSignatures
         app.use('/', passport.authenticate('bearer', { session: false }), testRouter);
         
     });
 
     it('should create instance', async () => {
-        const reponseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
-        expect(reponseFormatter).toBeTruthy();
+        const responseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
+        expect(responseFormatter).toBeTruthy();
     });
 
     it('should get formatter instance', async () => {
-        const reponseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
-        expect(reponseFormatter.format({
+        const responseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
+        expect(responseFormatter.format({
             message: 'hey'
         })).toBeTruthy();
     });

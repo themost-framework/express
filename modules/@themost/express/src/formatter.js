@@ -7,6 +7,7 @@
  */
 import {AbstractMethodError, ApplicationService} from '@themost/common';
 import {XSerializer} from '@themost/xml';
+import {Readable} from 'stream';
 
 class HttpResponseFormatter {
     /**
@@ -55,8 +56,7 @@ class JsonResponseFormatter extends HttpResponseFormatter {
     /**
      * 
      * @param {Request} req 
-     * @param {Response} res 
-     * @param {Function} next 
+     * @param {Response} res
      */
     // eslint-disable-next-line no-unused-vars
     execute(req, res) {
@@ -84,6 +84,7 @@ class ResponseFormatter extends ApplicationService {
                 const dictionary = {};
                 this.formatters.forEach((value, key) => {
                     const FormatterCtor = value;
+                    // noinspection JSCheckFunctionSignatures
                     Object.defineProperty(dictionary, key, {
                         enumerable: true,
                         configurable: true,
@@ -101,4 +102,68 @@ class ResponseFormatter extends ApplicationService {
 
 }
 
-export {ResponseFormatter, HttpResponseFormatter, XmlResponseFormatter, JsonResponseFormatter};
+class StreamFormatter {
+
+    constructor(data) {
+        Object.defineProperty(this, 'data', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+                return data;
+            }
+        });
+    }
+
+    /**
+     *
+     * @param {Request} req
+     * @param {Response} res
+     * @param {NextFunction} next
+     */
+    // eslint-disable-next-line no-unused-vars
+    execute(req, res, next) {
+        // if stream has an attribute for contentType
+        if (this.data.contentType) {
+            // set it
+            res.contentType(this.data.contentType);
+        }
+        // otherwise get content type from accept header
+        else {
+            res.contentType('application/octet-stream');
+        }
+        if (this.data instanceof Buffer) {
+            // convert to stream
+            const stream = Readable.from(this.data);
+            // pipe stream
+            stream.pipe(res);
+            // handle error
+            stream.on('error', err => {
+                return next(err);
+            });
+            // handle end
+            stream.on('end', () => {
+                return res.end();
+            });
+        } else {
+            // pipe data
+            this.data.pipe(res);
+            // handle error
+            this.data.on('error', err => {
+                return next(err);
+            });
+            // handle end
+            this.data.on('end', () => {
+                return res.end();
+            });
+        }
+
+    }
+}
+
+export {
+    ResponseFormatter,
+    HttpResponseFormatter,
+    XmlResponseFormatter,
+    JsonResponseFormatter,
+    StreamFormatter
+};

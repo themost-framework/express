@@ -12,6 +12,7 @@ import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuild
 import {ServicesConfiguration} from "./configuration";
 import {serviceRouter} from './service';
 import {BehaviorSubject} from 'rxjs';
+import {ResponseFormatter} from "./formatter";
 
 const configurationProperty = Symbol('configuration');
 const applicationProperty = Symbol('application');
@@ -58,6 +59,8 @@ class ExpressDataApplication extends IApplication {
         this.useModelBuilder();
         // use application service router to allow service router extensions
         this.useService(ApplicationServiceRouter);
+        // use response formatters
+        this.useService(ResponseFormatter);
         // add service property as behavior subject
         this.serviceRouter = new BehaviorSubject(serviceRouter);
         // register configuration services
