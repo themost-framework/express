@@ -49,7 +49,7 @@ describe('ResponseFormatter', () => {
 
     it('should use formatter to get json', async () => {
 
-        testRouter.get('/message', (req, res, next) => {
+        testRouter.get('/message', (req, res) => {
             const responseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
             res.format(responseFormatter.format({
                 message: 'hey'
@@ -79,7 +79,7 @@ describe('ResponseFormatter', () => {
 
         const responseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
         responseFormatter.formatters.set('application/xml', XmlResponseFormatter);
-        testRouter.get('/newMessage', (req, res, next) => {
+        testRouter.get('/newMessage', (req, res) => {
             res.format(responseFormatter.format({
                 message: 'hey'
             }).for(req, res));

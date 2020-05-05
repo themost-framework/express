@@ -79,6 +79,7 @@ class ResponseFormatter extends ApplicationService {
 
 
     format(data) {
+        // eslint-disable-next-line no-lone-blocks
         return {
             for: (req, res) => {
                 const dictionary = {};
@@ -123,14 +124,9 @@ class StreamFormatter {
     // eslint-disable-next-line no-unused-vars
     execute(req, res, next) {
         // if stream has an attribute for contentType
-        if (this.data.contentType) {
-            // set it
-            res.contentType(this.data.contentType);
-        }
-        // otherwise get content type from accept header
-        else {
-            res.contentType('application/octet-stream');
-        }
+        // set it, otherwise set application/octet-stream
+        res.contentType(this.data.contentType || 'application/octet-stream');
+
         if (this.data instanceof Buffer) {
             // convert to stream
             const stream = Readable.from(this.data);
