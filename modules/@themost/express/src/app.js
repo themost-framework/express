@@ -59,8 +59,6 @@ class ExpressDataApplication extends IApplication {
         this.useModelBuilder();
         // use application service router to allow service router extensions
         this.useService(ApplicationServiceRouter);
-        // use response formatters
-        this.useService(ResponseFormatter);
         // add service property as behavior subject
         this.serviceRouter = new BehaviorSubject(serviceRouter);
         // register configuration services

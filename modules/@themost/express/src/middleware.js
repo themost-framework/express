@@ -75,7 +75,7 @@ const DefaultTopOption = 25;
  */
 
 /**
- * Interface for options that may be passed to middlewares that handles requests against entities.
+ * Interface for options that may be passed to middleware that handles requests against entities.
  *
  * @interface EntityOptions
  */
