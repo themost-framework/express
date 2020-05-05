@@ -64,6 +64,28 @@ class JsonResponseFormatter extends HttpResponseFormatter {
     }
 }
 
+class ResponseFormatterWrapper {
+    constructor(container, data) {
+        this.for = function(req, res) {
+            const dictionary = {};
+            container.formatters.forEach((value, key) => {
+                const FormatterCtor = value;
+                // noinspection JSCheckFunctionSignatures
+                Object.defineProperty(dictionary, key, {
+                    enumerable: true,
+                    configurable: true,
+                    get: function () {
+                        return function() {
+                            return new FormatterCtor(data).execute(req, res);
+                        };
+                    }
+                });
+            });
+            return dictionary;
+        }
+    }
+}
+
 class ResponseFormatter extends ApplicationService {
 
     constructor(app) {
@@ -79,26 +101,7 @@ class ResponseFormatter extends ApplicationService {
 
 
     format(data) {
-        const self = this;
-        return {
-            for: function(req, res) {
-                const dictionary = {};
-                self.formatters.forEach((value, key) => {
-                    const FormatterCtor = value;
-                    // noinspection JSCheckFunctionSignatures
-                    Object.defineProperty(dictionary, key, {
-                        enumerable: true,
-                        configurable: true,
-                        get: function () {
-                            return function() {
-                                return new FormatterCtor(data).execute(req, res);
-                            };
-                        }
-                    });
-                });
-                return dictionary;
-            }
-        };
+        return new ResponseFormatterWrapper(this, data);
     }
 
 }
