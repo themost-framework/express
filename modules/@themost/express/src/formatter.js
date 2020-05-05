@@ -81,7 +81,7 @@ class ResponseFormatter extends ApplicationService {
     format(data) {
         const self = this;
         return {
-            for: (req, res) => {
+            for: function(req, res) {
                 const dictionary = {};
                 self.formatters.forEach((value, key) => {
                     const FormatterCtor = value;
