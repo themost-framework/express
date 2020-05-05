@@ -205,3 +205,39 @@ Use ExpressDataApplication#container to access and extend parent application. Th
     ...
     // user service router
     app.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
+
+### Use Response Formatters
+
+ResponseFormatter service formats responses based on `Accept` request header.
+
+The available response formatters are:
+
+- JsonResponseFormatter which is the default response formatter and returns JSON response.
+- XmlResponseFormatter which returns XML response.
+
+A response formatter may be added in ResponseFormatter#formatters collection:
+
+    // add application/json formatter
+    this.formatters.set('application/json', JsonResponseFormatter);
+    // add application/xml formatter
+    this.formatters.set('application/xml', JsonResponseFormatter);
+
+An example of custom formatter:
+
+    class MyJsonFormatter extends HttpResponseFormatter {
+        
+        execute(req, res) {
+            return res.json(data);
+        }        
+    }
+
+Note: ResponseFormatter is not enabled by default and it should be registered after application initialization.
+
+    import express from 'express';
+    import path from 'path';
+    import {ExpressDataApplication, serviceRouter, dateReviver, ResponseFormatter} from '@themost/express';
+    let app = express();
+    // data application setup
+    let dataApplication = new ExpressDataApplication(path.resolve(__dirname, 'config')); 
+    // initialize response formatter
+    dataApplication.useService(ResponseFormatter);
