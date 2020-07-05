@@ -19,7 +19,9 @@ class User extends DataObject {
     }
     @EdmMapping.action('anotherAvatar', EdmType.EdmStream)
     getAnotherAvatar() {
-        return fs.createReadStream(path.resolve(__dirname, 'avatars/avatar1.png'));
+        const stream = fs.createReadStream(path.resolve(__dirname, 'avatars/avatar1.png'));
+        stream.contentLocation = '/another/avatar/location';
+        return stream;
     }
 }
 module.exports = User;

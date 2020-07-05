@@ -34,6 +34,14 @@ export declare class ResponseFormatter extends ApplicationService {
     public format(data?: any): ResponseFormatterWrapper;
 }
 
+export declare interface StreamResponse {
+    contentLocation?: string;
+    contentDisposition?: string;
+    contentLanguage?: string;
+    contentEncoding?: string;
+    contentMD5?: string;
+}
+
 export declare class StreamFormatter {
     public data: any;
     constructor(data: any);
