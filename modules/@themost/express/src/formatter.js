@@ -108,6 +108,9 @@ class ResponseFormatter extends ApplicationService {
 
 class StreamFormatter {
 
+    /**
+     * @param {*} data
+     */
     constructor(data) {
         Object.defineProperty(this, 'data', {
             configurable: true,
@@ -129,6 +132,18 @@ class StreamFormatter {
         // if stream has an attribute for contentType
         // set it, otherwise set application/octet-stream
         res.contentType(this.data.contentType || 'application/octet-stream');
+        // get content-location header
+        if (Object.prototype.hasOwnProperty.call(this.data, 'contentLocation')) {
+            res.setHeader('Content-Location', this.data.contentLocation);
+        }
+        // get content-disposition header
+        if (Object.prototype.hasOwnProperty.call(this.data, 'contentDisposition')) {
+            res.setHeader('Content-Disposition', this.data.contentDisposition);
+        }
+        // get content-language header
+        if (Object.prototype.hasOwnProperty.call(this.data, 'contentEncoding')) {
+            res.setHeader('Content-Encoding', this.data.contentEncoding);
+        }
 
         if (this.data instanceof Buffer) {
             // convert to stream
