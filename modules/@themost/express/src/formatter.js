@@ -148,6 +148,10 @@ class StreamFormatter {
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentEncoding')) {
             res.setHeader('Content-Encoding', this.data.contentEncoding);
         }
+        // get content-md5 header
+        if (Object.prototype.hasOwnProperty.call(this.data, 'contentMD5')) {
+            res.setHeader('Content-MD5', this.data.contentMD5);
+        }
 
         if (this.data instanceof Buffer) {
             // convert to stream
