@@ -521,6 +521,7 @@ describe('serviceRouter', () => {
         expect(response.status).toBe(200);
         expect(response.type).toBe('application/octet-stream');
         expect(response.body).toBeInstanceOf(Buffer);
+        expect(response.get('content-location')).toBe('/another/avatar/location');
 
     });
 

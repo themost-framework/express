@@ -136,11 +136,15 @@ class StreamFormatter {
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentLocation')) {
             res.setHeader('Content-Location', this.data.contentLocation);
         }
+        // get content-language header
+        if (Object.prototype.hasOwnProperty.call(this.data, 'contentLanguage')) {
+            res.setHeader('Content-Language', this.data.contentLanguage);
+        }
         // get content-disposition header
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentDisposition')) {
             res.setHeader('Content-Disposition', this.data.contentDisposition);
         }
-        // get content-language header
+        // get content-encoding header
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentEncoding')) {
             res.setHeader('Content-Encoding', this.data.contentEncoding);
         }
