@@ -8,9 +8,12 @@
 import _ from "lodash";
 
 import Q from "q";
-import {ODataModelBuilder, EdmMapping, DataQueryable} from "@themost/data";
+import {ODataModelBuilder, EdmMapping, DataQueryable, EdmType} from "@themost/data";
 import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError} from '@themost/common';
 import { ResponseFormatter, StreamFormatter } from "./formatter";
+import {multerInstance} from "./multer";
+import fs from 'fs';
+
 const parseBoolean = LangUtils.parseBoolean;
 const DefaultTopOption = 25;
 /**
@@ -1128,59 +1131,82 @@ function postEntitySetAction(options) {
             }
             // add context as the first parameter
             actionParameters.push(req.context);
-            // if action has only one parameter and this parameter has fromBody flag 
-            if (parameters.length === 1 && parameters[0].fromBody) {
-                actionParameters.push(req.body);
-            }
-            else {
-                // add other parameters by getting request body attributes
-                _.forEach(parameters, x => {
-                    actionParameters.push(req.body[x.name]);
-                });
-            }
-            // invoke action
-            return Q.resolve(actionFunc.call(null, actionParameters)).then(result => {
-                if (action.returnType === 'Edm.Stream') {
-                    return tryFormatStream(result, req, res, next);
+
+            let tryGetStream = tryGetActionStream(parameters);
+            return tryGetStream(req, res, (err) => {
+                if (err) {
+                    return next(err);
                 }
-                // check if action returns a collection of object
-                const returnsCollection = _.isString(action.returnCollectionType);
-                let returnEntitySet;
-                // if func returns a collection of items
-                if (returnsCollection) {
-                    // get return entity set
-                    returnEntitySet = builder.getEntityTypeEntitySet(action.returnCollectionType);
-                }
-                if (result instanceof DataQueryable) {
-                    // todo:: validate return collection type and pass system query options ($filter, $expand, $select etc)
-                    if (returnsCollection) {
-                        // call DataModel.getItems() instead of DataModel.getList()
-                        // an action that returns a collection of objects must always return a native array (without paging parameters)
-                        return result.getItems().then(finalResult => {
-                            //return result
-                            if (returnEntitySet) {
-                                const data = returnEntitySet.mapInstanceSet(req.context, finalResult);
-                                return tryFormat(data, req, res);
+                // if action has only one parameter and this parameter has fromBody flag
+                if (parameters.length === 1 && parameters[0].fromBody) {
+                    actionParameters.push(req.body);
+                } else {
+                    // add other parameters by getting request body attributes
+                    _.forEach(parameters, x => {
+                        if (x.type === EdmType.EdmStream) {
+                            // convert file to read stream
+                            const file = req.files[x.name][0];
+                            const bufferedStream = fs.createReadStream(file.path);
+                            bufferedStream.contentEncoding = file.encoding;
+                            bufferedStream.contentType = file.mimetype;
+                            bufferedStream.contentFileName = file.originalname;
+                            actionParameters.push(bufferedStream);
+                        } else {
+                            if (x.fromBody) {
+                                actionParameters.push(req.body);
+                            } else {
+                                actionParameters.push(req.body[x.name]);
                             }
-                            return tryFormat(finalResult, req, res);
-                        });
-                    }
-                    else {
-                        // otherwise call DataModel.getItem() to get only the first item of the result set
-                        return result.getItem().then(finalResult => {
-                            return tryFormat(finalResult, req, res);
-                        });
-                    }
+
+                        }
+                    });
                 }
-                if (typeof result === 'undefined') {
-                    // return no content
-                    return res.status(204).send();
-                }
-                // return result as native object
-                return tryFormat(result, req, res);
-            }).catch(err => {
-                return next(err);
+                // invoke action
+                return Q.resolve(actionFunc.apply(null, actionParameters)).then(result => {
+                    if (action.returnType === 'Edm.Stream') {
+                        return tryFormatStream(result, req, res, next);
+                    }
+                    // check if action returns a collection of object
+                    const returnsCollection = _.isString(action.returnCollectionType);
+                    let returnEntitySet;
+                    // if func returns a collection of items
+                    if (returnsCollection) {
+                        // get return entity set
+                        returnEntitySet = builder.getEntityTypeEntitySet(action.returnCollectionType);
+                    }
+                    if (result instanceof DataQueryable) {
+                        // todo:: validate return collection type and pass system query options ($filter, $expand, $select etc)
+                        if (returnsCollection) {
+                            // call DataModel.getItems() instead of DataModel.getList()
+                            // an action that returns a collection of objects must always return a native array (without paging parameters)
+                            return result.getItems().then(finalResult => {
+                                //return result
+                                if (returnEntitySet) {
+                                    const data = returnEntitySet.mapInstanceSet(req.context, finalResult);
+                                    return tryFormat(data, req, res);
+                                }
+                                return tryFormat(finalResult, req, res);
+                            });
+                        }
+                        else {
+                            // otherwise call DataModel.getItem() to get only the first item of the result set
+                            return result.getItem().then(finalResult => {
+                                return tryFormat(finalResult, req, res);
+                            });
+                        }
+                    }
+                    if (typeof result === 'undefined') {
+                        // return no content
+                        return res.status(204).send();
+                    }
+                    // return result as native object
+                    return tryFormat(result, req, res);
+                }).catch(err => {
+                    return next(err);
+                });
             });
+
+
 
         }
         // there is no action with the given name, continue
@@ -1348,6 +1374,29 @@ function getEntityFunction(options) {
 }
 
 /**
+ * @param actionParameters
+ * @returns {function(*, *, *): *}
+ */
+function tryGetActionStream(actionParameters) {
+    let result = function(req, res, next) {
+        return next();
+    };
+    // validate Stream parameters
+    const files = actionParameters.filter( (x) => {
+        return x.type === EdmType.EdmStream;
+    });
+    if (files.length>0) {
+        // use multer()
+        result = multerInstance().fields(files.map((x) => {
+            return {
+                name: x.name
+            }
+        }));
+    }
+    return result;
+}
+
+/**
  * Handles incoming GET requests against an entity's function  e.g. GET /api/people/101/lastOrder
  * @param {EntityOptions=} options
  * @returns {Function}
@@ -1423,57 +1472,79 @@ function postEntityAction(options) {
                 const parameters = _.filter(action.parameters, x => {
                     return x.name !== 'bindingParameter';
                 });
-                // if action has only one parameter and this parameter has fromBody flag 
-                if (parameters.length === 1 && parameters[0].fromBody) {
-                    actionParameters.push(req.body);
-                }
-                else {
-                    // add other parameters by getting request body attributes
-                    _.forEach(parameters, x => {
-                        actionParameters.push(req.body[x.name]);
-                    });
-                }
-                return Q.resolve(memberFunc.apply(obj, actionParameters)).then(result => {
-                    if (action.returnType === 'Edm.Stream') {
-                        return tryFormatStream(result, req, res, next);
+                let tryGetStream = tryGetActionStream(parameters);
+                return tryGetStream(req, res, (err) => {
+                    if (err) {
+                        return next(err);
                     }
-                    // check if action returns a collection of object
-                    const returnsCollection = _.isString(action.returnCollectionType);
-                    let returnEntitySet;
-                    if (returnsCollection) {
-                        returnEntitySet = builder.getEntityTypeEntitySet(action.returnCollectionType);
+                    // if action has only one parameter and this parameter has fromBody flag
+                    if (parameters.length === 1 && parameters[0].fromBody) {
+                        actionParameters.push(req.body);
                     }
-                    if (result instanceof DataQueryable) {
-                        // todo:: validate return collection type and pass system query options ($filter, $expand, $select etc)
-                        if (returnsCollection) {
-                            // call DataModel.getItems() instead of DataModel.getList()
-                            // an action that returns a collection of objects must always return a native array (without paging parameters)
-                            return result.getItems().then(finalResult => {
-                                if (returnEntitySet) {
-                                    const data = returnEntitySet.mapInstanceSet(req.context, finalResult);
-                                    return tryFormat(data, req, res);
+                    else {
+                        // add other parameters by getting request body attributes
+                        _.forEach(parameters, x => {
+                            if (x.type === EdmType.EdmStream) {
+                                // convert file to read stream
+                                const file = req.files[x.name][0];
+                                const bufferedStream = fs.createReadStream(file.path);
+                                bufferedStream.contentEncoding = file.encoding;
+                                bufferedStream.contentType = file.mimetype;
+                                bufferedStream.contentFileName = file.originalname;
+                                actionParameters.push(bufferedStream);
+                            } else {
+                                if (x.fromBody) {
+                                    actionParameters.push(req.body);
+                                } else {
+                                    actionParameters.push(req.body[x.name]);
                                 }
-                                return tryFormat(finalResult, req, res);
-                            });
+
+                            }
+                        });
+                    }
+                    return Q.resolve(memberFunc.apply(obj, actionParameters)).then(result => {
+                        if (action.returnType === 'Edm.Stream') {
+                            return tryFormatStream(result, req, res, next);
                         }
-                        else {
-                            // otherwise call DataModel.getItem() to get only the first item of the result set
-                            return result.getItem().then(finalResult => {
-                                return tryFormat(finalResult, req, res);
-                            });
+                        // check if action returns a collection of object
+                        const returnsCollection = _.isString(action.returnCollectionType);
+                        let returnEntitySet;
+                        if (returnsCollection) {
+                            returnEntitySet = builder.getEntityTypeEntitySet(action.returnCollectionType);
                         }
-                    }
-                    if (typeof result === 'undefined') {
-                        // return no content
-                        return res.status(204).send();
-                    }
-                    // return result as native object
-                    if (returnsCollection && returnEntitySet) {
-                        const data = returnEntitySet.mapInstanceSet(req.context, result);
-                        return tryFormat(data, req, res);
-                    }
-                    return tryFormat(result, req, res);
-                });
+                        if (result instanceof DataQueryable) {
+                            // todo:: validate return collection type and pass system query options ($filter, $expand, $select etc)
+                            if (returnsCollection) {
+                                // call DataModel.getItems() instead of DataModel.getList()
+                                // an action that returns a collection of objects must always return a native array (without paging parameters)
+                                return result.getItems().then(finalResult => {
+                                    if (returnEntitySet) {
+                                        const data = returnEntitySet.mapInstanceSet(req.context, finalResult);
+                                        return tryFormat(data, req, res);
+                                    }
+                                    return tryFormat(finalResult, req, res);
+                                });
+                            }
+                            else {
+                                // otherwise call DataModel.getItem() to get only the first item of the result set
+                                return result.getItem().then(finalResult => {
+                                    return tryFormat(finalResult, req, res);
+                                });
+                            }
+                        }
+                        if (typeof result === 'undefined') {
+                            // return no content
+                            return res.status(204).send();
+                        }
+                        // return result as native object
+                        if (returnsCollection && returnEntitySet) {
+                            const data = returnEntitySet.mapInstanceSet(req.context, result);
+                            return tryFormat(data, req, res);
+                        }
+                        return tryFormat(result, req, res);
+                    });
+                })
+
             }
             // entity type does not have an instance method with the given name, continue
             return next();
