@@ -555,7 +555,7 @@ describe('serviceRouter', () => {
         expect(response.body.dateCreated).toBeTruthy();
     });
 
-    fit('should post file for entity set action', async () => {
+    it('should post file for entity set action', async () => {
         const app1 = express();
         // create a new instance of data application
         const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
