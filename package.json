@@ -1,6 +1,6 @@
 {
   "name": "most-data-express-src",
-  "version": "1.5.7-0",
+  "version": "1.5.7-next.0",
   "private": true,
   "description": "MOST Data ORM Express Middleware",
   "main": "index.js",
