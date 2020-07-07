@@ -1542,6 +1542,8 @@ function postEntityAction(options) {
                             return tryFormat(data, req, res);
                         }
                         return tryFormat(result, req, res);
+                    }).catch(function(err) {
+                        return next(err);
                     });
                 })
 
