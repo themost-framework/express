@@ -132,25 +132,35 @@ class StreamFormatter {
         // if stream has an attribute for contentType
         // set it, otherwise set application/octet-stream
         res.contentType(this.data.contentType || 'application/octet-stream');
+        const accessControlExposedHeaders = [];
         // get content-location header
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentLocation')) {
             res.setHeader('Content-Location', this.data.contentLocation);
+            accessControlExposedHeaders.push('Content-Location');
         }
         // get content-language header
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentLanguage')) {
             res.setHeader('Content-Language', this.data.contentLanguage);
+            accessControlExposedHeaders.push('Content-Language');
         }
         // get content-disposition header
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentDisposition')) {
             res.setHeader('Content-Disposition', this.data.contentDisposition);
+            accessControlExposedHeaders.push('Content-Disposition');
         }
         // get content-encoding header
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentEncoding')) {
             res.setHeader('Content-Encoding', this.data.contentEncoding);
+            accessControlExposedHeaders.push('Content-Encoding');
         }
         // get content-md5 header
         if (Object.prototype.hasOwnProperty.call(this.data, 'contentMD5')) {
             res.setHeader('Content-MD5', this.data.contentMD5);
+            accessControlExposedHeaders.push('Content-MD5');
+        }
+        // set  access control exposed headers
+        if (accessControlExposedHeaders.length > 0) {
+            res.setHeader('Access-Control-Expose-Headers', accessControlExposedHeaders.join(', '));
         }
 
         if (this.data instanceof Buffer) {
