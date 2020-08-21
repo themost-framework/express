@@ -19,7 +19,7 @@ class ServiceRouterExtension extends ApplicationService {
                     status: 'ok'
                 });
             });
-            // insert router at the beggining of serviceRouter.stack
+            // insert router at the beginning of serviceRouter.stack
             serviceRouter.stack.unshift.apply(serviceRouter.stack, addRouter.stack);
         });
     }
@@ -523,6 +523,66 @@ describe('serviceRouter', () => {
         expect(response.body).toBeInstanceOf(Buffer);
         expect(response.get('content-location')).toBe('/another/avatar/location');
 
+    });
+
+    it('should post file', async () => {
+        const app1 = express();
+        // create a new instance of data application
+        const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+
+        app1.use(express.json({
+            reviver: dateReviver
+        }));
+        // hold data application
+        app1.set('ExpressDataApplication', application);
+        // use data middleware (register req.context)
+        app1.use(application.middleware(app1));
+        // use test passport strategy
+        passport.use(passportStrategy);
+        // set service router
+        app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+
+        const response = await request(app1)
+            .post('/api/users/me/uploadAvatar')
+            .field('alternateName', 'testing')
+            .field('published', true)
+            .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
+        expect(response.status).toBe(200);
+        expect(response.body.dateCreated).toBeTruthy();
+    });
+
+    it('should post file for entity set action', async () => {
+        const app1 = express();
+        // create a new instance of data application
+        const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+
+        app1.use(express.json({
+            reviver: dateReviver
+        }));
+        // hold data application
+        app1.set('ExpressDataApplication', application);
+        // use data middleware (register req.context)
+        app1.use(application.middleware(app1));
+        // use test passport strategy
+        passport.use(passportStrategy);
+        // set service router
+        app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+
+        const response = await request(app1)
+            .post('/api/users/uploadTestAvatar')
+            .field('alternateName', 'testing')
+            .field('published', true)
+            .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
+        expect(response.status).toBe(200);
+        expect(response.body.dateCreated).toBeTruthy();
     });
 
 });

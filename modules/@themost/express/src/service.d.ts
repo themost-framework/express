@@ -10,4 +10,6 @@
 
  declare const serviceRouter: Router;
 
- export {serviceRouter};
+ declare function readStream(stream: ReadableStream): Buffer;
+
+ export {serviceRouter, readStream};

@@ -25,6 +25,27 @@ import {postEntitySetAction} from "./middleware";
 import {getEntityFunction} from "./middleware";
 import {postEntityAction} from "./middleware";
 
+/**
+ *
+ * @param {ReadableStream} stream
+ * @returns {Promise<Buffer>}
+ */
+function readStream(stream) {
+    // eslint-disable-next-line no-undef
+    return new Promise((resolve, reject) => {
+        let buffers = [];
+        stream.on('data', (d) => {
+            buffers.push(d);
+        });
+        stream.on('end', () => {
+            return resolve(Buffer.concat(buffers));
+        });
+        stream.on('error', (err) => {
+            return reject(err);
+        });
+    });
+}
+
 /* GET /  */
 serviceRouter.get('/', getEntitySetIndex());
 
@@ -76,4 +97,4 @@ serviceRouter.post('/:entitySet/:id', bindEntitySet(), postEntity());
 /* DELETE /:entitySet/:id deletes a data object by id. */
 serviceRouter.delete('/:entitySet/:id', bindEntitySet(), deleteEntity());
 
-export {serviceRouter};
+export {serviceRouter, readStream};
