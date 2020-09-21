@@ -28,6 +28,12 @@ class User extends DataObject {
         return context.model('User').where('name').equal(context.user.name).getItem();
     }
 
+    @EdmMapping.param('name', EdmType.EdmString, false)
+    @EdmMapping.func('active', 'User')
+    static getActiveUser(context, name) {
+        return context.model('User').where('name').equal(name).getItem();
+    }
+
     @EdmMapping.func('avatar', EdmType.EdmStream)
     getAvatar() {
         const stream = fs.createReadStream(path.resolve(__dirname, 'avatars/avatar1.png'));

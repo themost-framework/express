@@ -780,14 +780,29 @@ function getEntitySetFunction(options) {
                 return x.name !== 'bindingParameter';
             });
             // add other parameters by getting request body attributes
-            _.forEach(parameters, x => {
-                funcParameters.push(req.query[x.name]);
-            });
+            try {
+                _.forEach(parameters, x => {
+                    if (x.nullable === false) {
+                        // throw exception if a required parameter is missing
+                        if (Object.prototype.hasOwnProperty.call(req.query, x.name) === false) {
+                            throw new HttpBadRequestError('A required parameter is missing');
+                        }
+                    }
+                    // validate that query has this property and add it to function parameters
+                    if (Object.prototype.hasOwnProperty.call(req.query, x.name) === true) {
+                        funcParameters.push(req.query[x.name]);
+                    }
+                });
+            } catch (err) {
+                return next(err);
+            }
             //get data object class
             const DataObjectClass = model.getDataObjectType();
             const staticFunc = EdmMapping.hasOwnFunction(DataObjectClass, entitySetFunction);
             if (staticFunc) {
-                return Q.resolve(staticFunc(req.context)).then(result => {
+                // add context to function parameters
+                funcParameters.splice(0, 0, req.context);
+                return Q.resolve(staticFunc.apply(null, funcParameters)).then(result => {
                     if (func.returnType === 'Edm.Stream') {
                         return tryFormatStream(result, req, res, next);
                     }
@@ -909,14 +924,14 @@ function getEntitySetFunction(options) {
                             if (Array.isArray(result)) {
                                 // send no content if empty
                                 if (typeof result[0] === 'undefined') {
-                                    return res.send(204);
+                                    return res.status(204).send();
                                 }
                                 // get first item only
                                 return tryFormat(result[0], req, res);
                             }
                             // send no content if empty
                             if (typeof result === 'undefined') {
-                                return res.send(204);
+                                return res.status(204).send();
                             }
                             return tryFormat(result, req, res);
                         }
