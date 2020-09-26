@@ -5,3 +5,7 @@
 node_modules
 test
 *.spec.js
+.vscode
+.eslintignore
+rollup.config.js
+
