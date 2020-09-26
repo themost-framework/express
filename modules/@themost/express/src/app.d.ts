@@ -104,9 +104,5 @@ declare global {
         interface Request {
             context: ExpressDataContext;
         }
-
-        interface User {
-            name: string;
-        }
     }
 }
