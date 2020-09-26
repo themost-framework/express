@@ -1,71 +1,64 @@
-/**
- * MOST Web Framework 2.0 Codename Blueshift
- * Copyright (c) 2017, THEMOST LP All rights reserved
- *
- * Use of this source code is governed by an BSD-3-Clause license that can be
- * found in the LICENSE file at https://themost.io/license
- */
+// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2017-2020, THEMOST LP All rights reserved
+import {RequestHandler} from 'express';
 
- import {RequestHandler} from 'express';
+export declare interface BindEntitySetOptions {
+    from?: string;
+}
 
- export declare interface BindEntitySetOptions {
-     from?: string;
- }
+export declare interface EntitySetOptions {
 
- export declare interface EntitySetOptions {
+    entitySet?: string;
 
-     entitySet?: string;
+    entitySetActionFrom?: string;
 
-     entitySetActionFrom?: string;
+    entitySetFunctionFrom?: string;
 
-     entitySetFunctionFrom?: string;
+    navigationPropertyFrom?: string;
 
-     navigationPropertyFrom?: string;
+    entityActionFrom?: string;
 
-     entityActionFrom?: string;
+    entityFunctionFrom?: string;
 
-     entityFunctionFrom?: string;
+}
 
- }
+export declare interface EntityOptions {
 
- export declare interface EntityOptions {
+    entitySet?: string;
 
-     entitySet?: string;
+    navigationPropertyFrom?: string;
 
-     navigationPropertyFrom?: string;
+    entityActionFrom?: string;
 
-     entityActionFrom?: string;
+    entityFunctionFrom?: string;
 
-     entityFunctionFrom?: string;
+}
 
- }
+export declare function bindEntitySet(options?: BindEntitySetOptions): RequestHandler;
 
- export declare function bindEntitySet(options?: BindEntitySetOptions): RequestHandler;
+export declare function getEntitySetIndex(): RequestHandler;
 
- export declare function getEntitySetIndex(): RequestHandler;
+export declare function getMetadataDocument(): RequestHandler;
 
- export declare function getMetadataDocument(): RequestHandler;
+export declare function getEntitySet(options?: EntitySetOptions): RequestHandler;
 
- export declare function getEntitySet(options?: EntitySetOptions): RequestHandler;
+export declare function postEntitySet(options?: EntitySetOptions): RequestHandler;
 
- export declare function postEntitySet(options?: EntitySetOptions): RequestHandler;
+export declare function deleteEntitySet(options?: EntitySetOptions): RequestHandler;
 
- export declare function deleteEntitySet(options?: EntitySetOptions): RequestHandler;
+export declare function getEntity(options?: EntityOptions): RequestHandler;
 
- export declare function getEntity(options?: EntityOptions): RequestHandler;
+export declare function postEntity(options?: EntityOptions): RequestHandler;
 
- export declare function postEntity(options?: EntityOptions): RequestHandler;
+export declare function deleteEntity(options?: EntityOptions): RequestHandler;
 
- export declare function deleteEntity(options?: EntityOptions): RequestHandler;
+export declare function getEntityNavigationProperty(options?: EntityOptions): RequestHandler;
 
- export declare function getEntityNavigationProperty(options?: EntityOptions): RequestHandler;
+export declare function getEntitySetFunction(options?: EntitySetOptions): RequestHandler;
 
- export declare function getEntitySetFunction(options?: EntitySetOptions): RequestHandler;
+export declare function postEntitySetFunction(options?: EntitySetOptions): RequestHandler;
 
- export declare function postEntitySetFunction(options?: EntitySetOptions): RequestHandler;
+export declare function postEntitySetAction(options?: EntitySetOptions): RequestHandler;
 
- export declare function postEntitySetAction(options?: EntitySetOptions): RequestHandler;
+export declare function getEntityFunction(options?: EntityOptions): RequestHandler;
 
- export declare function getEntityFunction(options?: EntityOptions): RequestHandler;
-
- export declare function postEntityAction(options?: EntityOptions): RequestHandler;
+export declare function postEntityAction(options?: EntityOptions): RequestHandler;

@@ -1,12 +1,5 @@
+// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2017-2020, THEMOST LP All rights reserved
 
-
-/**
- * MOST Web Framework 2.0 Codename Blueshift
- * Copyright (c) 2017, THEMOST LP All rights reserved
- *
- * Use of this source code is governed by an BSD-3-Clause license that can be
- * found in the LICENSE file at https://themost.io/license
- */
 import { ApplicationService } from '@themost/common';
 import {NextFunction, Request, Response} from 'express';
 
@@ -16,6 +9,7 @@ export declare class HttpResponseFormatter {
     public execute(req: Request, res: Response): Promise<any>;
 }
 
+// noinspection JSUnusedGlobalSymbols
 export declare class JsonResponseFormatter extends HttpResponseFormatter {
 
 }
@@ -34,6 +28,7 @@ export declare class ResponseFormatter extends ApplicationService {
     public format(data?: any): ResponseFormatterWrapper;
 }
 
+// noinspection JSUnusedGlobalSymbols
 export declare interface StreamResponse {
     contentLocation?: string;
     contentDisposition?: string;
