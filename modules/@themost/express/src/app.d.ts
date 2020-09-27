@@ -10,6 +10,10 @@ export declare class ApplicationServiceRouter implements IApplicationService {
     public getApplication(): IApplication;
 }
 
+// tslint:disable-next-line:ban-types
+declare type ServiceConstructor<T> = Function & { prototype: T };
+
+// noinspection JSUnusedGlobalSymbols
 export declare class ExpressDataApplication {
 
     public readonly container: BehaviorSubject<Application>;
@@ -26,13 +30,13 @@ export declare class ExpressDataApplication {
 
     public useService(serviceCtor: void): this;
 
-    public hasStrategy<T>(serviceCtor: new() => T): boolean;
+    public hasStrategy<T>(serviceCtor: ServiceConstructor<T>): boolean;
 
-    public hasService<T>(serviceCtor: new() => T): boolean;
+    public hasService<T>(serviceCtor: ServiceConstructor<T>): boolean;
 
-    public getStrategy<T>(serviceCtor: new() => T): T;
+    public getStrategy<T>(serviceCtor: ServiceConstructor<T>): T;
 
-    public getService<T>(serviceCtor: new() => T): T;
+    public getService<T>(serviceCtor: ServiceConstructor<T>): T;
 
     public createContext(): ExpressDataContext;
 
@@ -94,7 +98,7 @@ export declare class ExpressDataContext extends DefaultDataContext {
 
     public getApplication(): ExpressDataApplication;
 
-    public getStrategy<T>(serviceCtor: new() => T): T;
+    public getStrategy<T>(serviceCtor: ServiceConstructor<T>): T;
 
     public engine(extension): any;
 }
@@ -102,6 +106,7 @@ export declare class ExpressDataContext extends DefaultDataContext {
 declare global {
     namespace Express {
         interface Request {
+            // @ts-ignore
             context: ExpressDataContext;
         }
     }
