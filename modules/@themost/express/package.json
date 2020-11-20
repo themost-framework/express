@@ -1,6 +1,6 @@
 {
   "name": "@themost/express",
-  "version": "1.5.13",
+  "version": "1.6.1",
   "description": "MOST Data ORM Express Middleware",
   "main": "dist/themost_express.cjs.js",
   "module": "dist/themost_express.esm.js",
@@ -37,6 +37,7 @@
     "express": "^4.16.3",
     "lodash": "^4.17.11",
     "multer": "^1.4.2",
+    "on-headers": "^1.0.2",
     "pluralize": "^7.0.0",
     "q": "^1.5.1",
     "rxjs": "^6.5.4",

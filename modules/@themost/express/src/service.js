@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://themost.io/license
  */
 import express from 'express';
+import {ODataModelBuilder} from '@themost/data';
 
 const serviceRouter = express.Router();
 
@@ -24,7 +25,8 @@ import {postEntitySetFunction} from "./middleware";
 import {postEntitySetAction} from "./middleware";
 import {getEntityFunction} from "./middleware";
 import {postEntityAction} from "./middleware";
-
+import {onServiceHeaders} from "./middleware";
+import url from 'url';
 /**
  *
  * @param {ReadableStream} stream
@@ -45,6 +47,57 @@ function readStream(stream) {
         });
     });
 }
+
+serviceRouter.use((req, res, next) => {
+    if (req.context && req.context.request == null) {
+        // set context request
+        // to be compatible with @themost/web context
+        Object.defineProperty(req.context, 'request', {
+            enumerable: false,
+            configurable: true,
+            get: function() {
+                return req;
+            }
+        });
+    }
+    if (req.context && req.context.response == null) {
+        // set context response
+        // to be compatible with @themost/web context
+        Object.defineProperty(req.context, 'response', {
+            enumerable: false,
+            configurable: true,
+            get: function() {
+                return res;
+            }
+        });
+    }
+    if (req.context != null) {
+         /**
+         * get current model builder
+         * @type {ODataModelBuilder}
+         */
+        const builder = req.context.getApplication().getStrategy(ODataModelBuilder);
+        if (typeof builder.getContextLink !== 'function') {
+            builder.hasContextLink(
+                /**
+                 * @param {ExpressRequestContext} context 
+                 */
+                function(context) {
+                    let serviceOrigin = context.getApplication().getConfiguration().getSourceAt('settings/builder/serviceOrigin');
+                    // get serviceRoot from applicatiom configuration
+                    if (serviceOrigin) {
+                        // get absolute URI
+                        return new URL('$metadata', serviceOrigin);
+                    }
+                }
+            );
+        }
+    }
+    return next();
+   
+});
+
+serviceRouter.use(onServiceHeaders());
 
 /* GET /  */
 serviceRouter.get('/', getEntitySetIndex());

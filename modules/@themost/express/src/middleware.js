@@ -13,6 +13,7 @@ import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedE
 import { ResponseFormatter, StreamFormatter } from "./formatter";
 import {multerInstance} from "./multer";
 import fs from 'fs';
+import onHeaders from 'on-headers';
 
 const parseBoolean = LangUtils.parseBoolean;
 const DefaultTopOption = 25;
@@ -1570,6 +1571,26 @@ function postEntityAction(options) {
         });
     };
 }
+/**
+ * @returns {Function}
+ */
+function onServiceHeaders() {
+    return function onServiceHeadersHandler(_req, res, next) {
+        // subsribe for headers
+        onHeaders(res, 
+        /**
+         * @this ServerResponse
+         */
+            function() {
+                // set OData-Version header
+                if (!this.getHeader('OData-Version')) {
+                    this.setHeader('OData-Version', '4.0');
+                }
+        });
+        // and return
+        return next();
+    }
+}
 
 /**
  * @returns {Function}
@@ -1586,7 +1607,13 @@ function getEntitySetIndex() {
         const builder = req.context.getApplication().getStrategy(ODataModelBuilder);
         // get edm document
         return builder.getEdm().then(result => {
+
+            let contextURI;
+            if (typeof builder.getContextLink === 'function') {
+                contextURI = builder.getContextLink(req.context);
+            }
             return res.json({
+                '@odata.context': contextURI,
                 value: result.entityContainer.entitySet
             });
         }).catch(err => {
@@ -1617,7 +1644,7 @@ function getMetadataDocument() {
         });
     };
 }
-
+export {onServiceHeaders};
 export {getEntitySetIndex};
 export {getMetadataDocument};
 export {bindEntitySet};
