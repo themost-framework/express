@@ -839,10 +839,10 @@ function getEntitySetFunction(options) {
                                 //do not add context params
                                 const q1 = extendQueryable(result, q);
                                 return q1.getItem().then(result => {
-                                    if (_.isNil(result)) {
-                                        return next(new HttpNotFoundError());
-                                    }
                                     if (_.isString(navigationProperty)) {
+                                        if (_.isNil(result)) {
+                                            return next(new HttpNotFoundError());
+                                        }
                                         //set internal identifier for object
                                         req.params._id = result[returnModel.primaryKey];
                                         //set internal navigation property
@@ -855,6 +855,9 @@ function getEntitySetFunction(options) {
                                         })(req, res, next);
                                     }
                                     else if (_.isString(entityFunction)) {
+                                        if (_.isNil(result)) {
+                                            return next(new HttpNotFoundError());
+                                        }
                                         //set internal identifier for object
                                         req.params._id = result[returnModel.primaryKey];
                                         //set internal entity function
@@ -907,6 +910,10 @@ function getEntitySetFunction(options) {
                             // throw error for unknown model
                             return next(new HttpBadRequestError('Entity set function return type is invalid. Expected an instance of DataModel but the specified data model cannot be found.'));
                         }
+                        // throw error if result is empty
+                        if (_.isNil(result)) {
+                            return next(new HttpNotFoundError());
+                        }
                         // get return entity set
                         returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
                         //set internal identifier for object
@@ -942,8 +949,12 @@ function getEntitySetFunction(options) {
                             return tryFormat(result, req, res);
                         }
                     }
-                    if (_.isNil(returnEntitySet)) {
+                    if (returnEntitySet == null) {
                         return next(new HttpNotFoundError("Result EntitySet not found"));
+                    }
+                    // throw error if result is empty
+                    if (_.isNil(result)) {
+                        return next(new HttpNotFoundError());
                     }
                     //set internal identifier for object
                     req.params._id = result[returnModel.primaryKey];
@@ -1348,9 +1359,6 @@ function getEntityFunction(options) {
                                 const q1 = extendQueryable(result, q);
                                 //get item
                                 return q1.getItem().then(result => {
-                                    if (_.isNil(result)) {
-                                        return next(new HttpNotFoundError());
-                                    }
                                     //return result
                                     return tryFormat(result, req, res);
                                 });
