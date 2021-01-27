@@ -585,4 +585,49 @@ describe('serviceRouter', () => {
         expect(response.body.dateCreated).toBeTruthy();
     });
 
+
+    it('should use an entity function and return no content', async () => {
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .get('/api/users/me/emptyContent')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(204);
+
+        response = await request(app)
+            .get('/api/users/staticEmptyContent')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(204);
+    });
+
+    it('should use an entity action and return no content', async () => {
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .post('/api/users/me/emptyContent')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                message: 'Hello'
+            });
+        expect(response.status).toBe(204);
+
+        response = await request(app)
+            .post('/api/users/staticEmptyContent')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                message: 'Hello'
+            });
+        expect(response.status).toBe(204);
+
+    });
+
+
 });
