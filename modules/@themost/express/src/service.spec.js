@@ -629,5 +629,50 @@ describe('serviceRouter', () => {
 
     });
 
+    it('should use an entity function and return queryable no content', async () => {
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .get('/api/users/me/emptyPerson?$select=id,givenName,familyName')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(204);
+
+        response = await request(app)
+            .get('/api/users/me/queryEmptyPerson?$select=id,givenName,familyName')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(204);
+
+        response = await request(app)
+            .get('/api/users/staticEmptyPerson?$select=id,givenName,familyName')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(204);
+
+        response = await request(app)
+            .get('/api/users/staticEmptyPerson/orders')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(404);
+
+        response = await request(app)
+            .get('/api/users/staticQueryEmptyPerson?$select=id,givenName,familyName')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(204);
+
+        response = await request(app)
+            .get('/api/users/staticQueryEmptyPerson/orders')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(404);
+
+    });
+
+
+
 
 });

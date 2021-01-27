@@ -79,24 +79,44 @@ class User extends DataObject {
         });
     }
 
-    @EdmMapping.func('emptyContent', 'User', 'Object')
+    @EdmMapping.func('emptyContent', 'Object')
     getEmptyContent() {
         return null;
     }
 
-    @EdmMapping.func('staticEmptyContent', 'User', 'Object')
+    @EdmMapping.func('emptyPerson', 'Person')
+    async getEmptyPerson() {
+        return this.context.model('Person').where('id').equal(0).getItem();
+    }
+
+    @EdmMapping.func('queryEmptyPerson', 'Person')
+    async getQueryEmptyPerson() {
+        return this.context.model('Person').where('id').equal(0);
+    }
+
+    @EdmMapping.func('staticEmptyContent', 'Object')
     static getStaticEmptyContent(context) {
         return null;
     }
 
+    @EdmMapping.func('staticEmptyPerson', 'Person')
+    static getStaticEmptyPerson(context) {
+        return context.model('Person').where('id').equal(0).getItem();
+    }
+
+    @EdmMapping.func('staticQueryEmptyPerson', 'Person')
+    static getStaticQueryEmptyPerson(context) {
+        return context.model('Person').where('id').equal(0);
+    }
+
     @EdmMapping.param('message', EdmType.EdmString, false)
-    @EdmMapping.action('emptyContent', 'User', 'Object')
+    @EdmMapping.action('emptyContent', 'Object')
     postEmptyContent(message) {
         return null;
     }
 
     @EdmMapping.param('message', EdmType.EdmString, false)
-    @EdmMapping.action('staticEmptyContent', 'User', 'Object')
+    @EdmMapping.action('staticEmptyContent', 'Object')
     static staticPostEmptyContent(context, message) {
         return null;
     }
