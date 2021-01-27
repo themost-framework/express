@@ -131,6 +131,12 @@ function tryFormat(data, req, res) {
         // call Response.format with formatter
         return res.format(responseFormatter.format(data).for(req, res));
     }
+    // fallback to json
+    if (data == null) {
+        // send no content if data is empty
+        return res.status(204).type('application/json').send();
+    }
+    // otherwise send json data
     return res.json(data);
  }
 

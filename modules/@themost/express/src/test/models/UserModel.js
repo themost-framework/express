@@ -79,5 +79,27 @@ class User extends DataObject {
         });
     }
 
+    @EdmMapping.func('emptyContent', 'User', 'Object')
+    getEmptyContent() {
+        return null;
+    }
+
+    @EdmMapping.func('staticEmptyContent', 'User', 'Object')
+    static getStaticEmptyContent(context) {
+        return null;
+    }
+
+    @EdmMapping.param('message', EdmType.EdmString, false)
+    @EdmMapping.action('emptyContent', 'User', 'Object')
+    postEmptyContent(message) {
+        return null;
+    }
+
+    @EdmMapping.param('message', EdmType.EdmString, false)
+    @EdmMapping.action('staticEmptyContent', 'User', 'Object')
+    static staticPostEmptyContent(context, message) {
+        return null;
+    }
+
 }
 module.exports = User;
