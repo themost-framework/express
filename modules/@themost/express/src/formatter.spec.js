@@ -4,7 +4,7 @@ import request from 'supertest';
 import express from 'express';
 import passport from 'passport';
 import {TestPassportStrategy} from './passport.spec';
-import {ResponseFormatter, XmlResponseFormatter} from './formatter';
+import {JsonResponseFormatter, ResponseFormatter, XmlResponseFormatter} from './formatter';
 describe('ResponseFormatter', () => {
    
     /**
@@ -91,6 +91,31 @@ describe('ResponseFormatter', () => {
         expect(response.status).toBe(200);
         expect(response.text).toBeTruthy();
         expect(response.text).toBe(`<Object><message>hey</message></Object>`);
+    });
+
+    it('should return 204 no content', async () => {
+
+        const responseFormatter = new ResponseFormatter(app.get(ExpressDataApplication.name));
+        responseFormatter.formatters.set('application/xml', XmlResponseFormatter);
+        testRouter.get('/no-xml-content', (req, res) => {
+            res.format(responseFormatter.format(null).for(req, res));
+        });
+
+        let response = await request(app)
+            .get('/no-xml-content')
+            .set('Accept', 'application/xml');
+        expect(response.status).toBe(204);
+
+        responseFormatter.formatters.set('application/json', JsonResponseFormatter);
+        testRouter.get('/no-json-content', (req, res) => {
+            res.format(responseFormatter.format(null).for(req, res));
+        });
+
+        response = await request(app)
+            .get('/no-json-content')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(204);
+
     });
     
 });

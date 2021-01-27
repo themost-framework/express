@@ -43,7 +43,7 @@ class XmlResponseFormatter extends HttpResponseFormatter {
     // eslint-disable-next-line no-unused-vars
     execute(req, res) {
         if (this.data == null) {
-            res.status(204).type('application/xml').send();
+            return res.status(204).type('application/xml').send();
         }
         // get value
         const text = XSerializer.serialize(this.data).outerXML();
@@ -60,6 +60,11 @@ class JsonResponseFormatter extends HttpResponseFormatter {
      */
     // eslint-disable-next-line no-unused-vars
     execute(req, res) {
+        // if data is empty
+        if (this.data == null) {
+            // return no content
+            return res.status(204).type('application/json').send();
+        }
         res.json(this.data);
     }
 }
@@ -129,6 +134,11 @@ class StreamFormatter {
      */
     // eslint-disable-next-line no-unused-vars
     execute(req, res, next) {
+        // handle empty data
+        if (this.data == null) {
+            // return no content
+            return res.status(204).type('application/octet-stream').send();
+        }
         // if stream has an attribute for contentType
         // set it, otherwise set application/octet-stream
         res.contentType(this.data.contentType || 'application/octet-stream');
@@ -162,7 +172,6 @@ class StreamFormatter {
         if (accessControlExposedHeaders.length > 0) {
             res.setHeader('Access-Control-Expose-Headers', accessControlExposedHeaders.join(', '));
         }
-
         if (this.data instanceof Buffer) {
             // convert to stream
             const stream = Readable.from(this.data);
