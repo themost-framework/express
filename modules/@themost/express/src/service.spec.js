@@ -546,13 +546,20 @@ describe('serviceRouter', () => {
             name: 'alexis.rees@example.com'
         });
 
-        const response = await request(app1)
+        let response = await request(app1)
             .post('/api/users/me/uploadAvatar')
             .field('alternateName', 'testing')
             .field('published', true)
             .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
         expect(response.status).toBe(200);
         expect(response.body.dateCreated).toBeTruthy();
+
+        response = await request(app1)
+            .post('/api/users/me/uploadAvatar')
+            .field('alternateName', 'testing')
+            .field('published', true)
+        expect(response.status).toBe(400);
+
     });
 
     it('should post file for entity set action', async () => {

@@ -534,7 +534,7 @@ function postEntity(options) {
         // validate primary key
         const key = req.params[opts.from];
         if (typeof key === 'undefined' || key === null) {
-            return next(new HttpBadRequestError('Object identifier cannot be emty at this context'));
+            return next(new HttpBadRequestError('Object identifier cannot be empty at this context'));
         }
         thisModel.where(thisModel.primaryKey).equal(key).count().then(value => {
             if (value === 0) {
@@ -542,7 +542,7 @@ function postEntity(options) {
             }
             // validate req.body
             if (typeof req.body === 'undefined') {
-                return next(new HttpBadRequestError('Request body vannot be empty'));
+                return next(new HttpBadRequestError('Request body cannot be empty'));
             }
             // clone body
             const obj = Object.assign({}, req.body);
@@ -1176,13 +1176,24 @@ function postEntitySetAction(options) {
                     // add other parameters by getting request body attributes
                     _.forEach(parameters, x => {
                         if (x.type === EdmType.EdmStream) {
-                            // convert file to read stream
-                            const file = req.files[x.name][0];
-                            const bufferedStream = fs.createReadStream(file.path);
-                            bufferedStream.contentEncoding = file.encoding;
-                            bufferedStream.contentType = file.mimetype;
-                            bufferedStream.contentFileName = file.originalname;
+                            let bufferedStream = null;
+                            if (req.files && Object.prototype.hasOwnProperty.call(req.files, x.name)) {
+                                const files = req.files[x.name];
+                                // convert file to read stream
+                                if (Array.isArray(files) && files.length) {
+                                    // get first file
+                                    const file = files[0];
+                                    bufferedStream = fs.createReadStream(file.path);
+                                    bufferedStream.contentEncoding = file.encoding;
+                                    bufferedStream.contentType = file.mimetype;
+                                    bufferedStream.contentFileName = file.originalname;
+                                }
+                            }
+                            if (bufferedStream == null && x.nullable === false) {
+                                return next(new HttpBadRequestError('File parameter is missing'));
+                            }
                             actionParameters.push(bufferedStream);
+                            
                         } else {
                             if (x.fromBody) {
                                 actionParameters.push(req.body);
@@ -1514,12 +1525,22 @@ function postEntityAction(options) {
                         // add other parameters by getting request body attributes
                         _.forEach(parameters, x => {
                             if (x.type === EdmType.EdmStream) {
-                                // convert file to read stream
-                                const file = req.files[x.name][0];
-                                const bufferedStream = fs.createReadStream(file.path);
-                                bufferedStream.contentEncoding = file.encoding;
-                                bufferedStream.contentType = file.mimetype;
-                                bufferedStream.contentFileName = file.originalname;
+                                let bufferedStream = null;
+                                if (req.files && Object.prototype.hasOwnProperty.call(req.files, x.name)) {
+                                    const files = req.files[x.name];
+                                    // convert file to read stream
+                                    if (Array.isArray(files) && files.length) {
+                                        // get first file
+                                        const file = files[0];
+                                        bufferedStream = fs.createReadStream(file.path);
+                                        bufferedStream.contentEncoding = file.encoding;
+                                        bufferedStream.contentType = file.mimetype;
+                                        bufferedStream.contentFileName = file.originalname;
+                                    }
+                                }
+                                if (bufferedStream == null && x.nullable === false) {
+                                    return next(new HttpBadRequestError('File parameter is missing'));
+                                }
                                 actionParameters.push(bufferedStream);
                             } else {
                                 if (x.fromBody) {
