@@ -1666,7 +1666,11 @@ function getMetadataDocument() {
 
 function setHeaders() {
     return function(_req, res, next) {
-        onHeaders(res, function onSetHeaders() {
+        onHeaders(res, 
+            /**
+             * @this {ServerResponse}
+             */
+            function onSetHeaders() {
             this.set('OData-Version', '4.0');
         });
         return next();

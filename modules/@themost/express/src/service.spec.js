@@ -103,7 +103,7 @@ describe('serviceRouter', () => {
         expect(response.headers['odata-version']).toBe('4.0');
 
         const dataApplication = app.get('ExpressDataApplication');
-        dataApplication.getService(ODataModelBuilder).hasContextLink((context) => {
+        dataApplication.getService(ODataModelBuilder).hasContextLink(() => {
             return `http://server.example.com/api/$metadata`;
          });
          response = await request(app)

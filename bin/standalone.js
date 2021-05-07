@@ -7,7 +7,6 @@
  */
  import http from 'http';
  import debug from 'debug';
- import {Args} from '@themost/common';
  import express from 'express';
  import path from 'path';
  import {ExpressDataApplication, serviceRouter} from '../modules/@themost/express/src';
@@ -37,7 +36,7 @@ let host = process.env.HOST || 'localhost';
  const dataApplication = new ExpressDataApplication(path.resolve(__dirname, '../modules/@themost/express/src/test/config'));
 
  dataApplication.getService(ODataModelBuilder).defaultNamespace = 'Test1';
- dataApplication.getService(ODataModelBuilder).hasContextLink((context) => {
+ dataApplication.getService(ODataModelBuilder).hasContextLink((_context) => {
     return `http://${host}:${port}/api/$metadata`;
  });
  // hold data application
@@ -58,7 +57,7 @@ let host = process.env.HOST || 'localhost';
 let server = http.createServer(app);
 // listen on provided port, on all network interfaces.
 server.on('error', err => {
-    return reject(err);
+    log(err);
     });
 server.on('close', () => {
     log('Stopping the test api server from accepting new connections.');
