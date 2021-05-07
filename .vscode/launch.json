@@ -7,14 +7,28 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "test",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
+            "name": "npm test",
             "program": "${workspaceFolder}/node_modules/.bin/jasmine",
             "cwd": "${workspaceFolder}",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
+            "console": "integratedTerminal",
+            "env": {
+                "NODE_ENV": "development",
+                "DEBUG": "themost-framework:*"
+            }
+        },
+        {
+            "name": "npm run standalone",
+            "program": "${workspaceFolder}/bin/standalone.js",
+            "request": "launch",
+            "type": "node",
+            "console": "integratedTerminal",
+            "env": {
+                "NODE_ENV": "development",
+                "DEBUG": "themost-framework:*"
+            },
+            "runtimeArgs": [
+                "--require",
+                "@babel/register"
             ]
         }
     ]
