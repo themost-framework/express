@@ -1622,12 +1622,15 @@ function getEntitySetIndex() {
         const builder = req.context.getApplication().getStrategy(ODataModelBuilder);
         // get edm document
         return builder.getEdm().then(result => {
-            const contextLink = builder.getContextLink(req.context);
-            if (contextLink) {
-                return res.json({
-                    "@odata.context": contextLink,
-                    "value": result.entityContainer.entitySet
-                });
+            let contextLink
+            if (typeof builder.getContextLink === 'function') {
+                contextLink = builder.getContextLink(req.context);
+                if (contextLink) {
+                    return res.json({
+                        "@odata.context": contextLink,
+                        "value": result.entityContainer.entitySet
+                    });
+                }
             }
             return res.json({
                 "value": result.entityContainer.entitySet

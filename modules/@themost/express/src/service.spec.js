@@ -7,6 +7,7 @@ import passport from 'passport';
 import {serviceRouter} from './service';
 import {dateReviver} from './helpers';
 import { ApplicationService } from '@themost/common';
+import { ODataModelBuilder } from '@themost/data';
 
 class ServiceRouterExtension extends ApplicationService {
     constructor(app) {
@@ -88,7 +89,7 @@ describe('serviceRouter', () => {
         //
     });
 
-    it('should GET /api/', async () => {
+    fit('should GET /api/', async () => {
         // change user
         spyOn(passportStrategy, 'getUser').and.returnValue({
             name: 'alexis.rees@example.com'
@@ -100,6 +101,19 @@ describe('serviceRouter', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.headers['odata-version']).toBe('4.0');
+
+        const dataApplication = app.get('ExpressDataApplication');
+        dataApplication.getService(ODataModelBuilder).hasContextLink((context) => {
+            return `http://server.example.com/api/$metadata`;
+         });
+         response = await request(app)
+            .get('/api/')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(Object.prototype.hasOwnProperty.call(response.body, '@odata.context')).toBeTrue();
+        expect(response.body['@odata.context']).toBe('http://server.example.com/api/$metadata');
+
     });
 
     it('should GET /api/$metadata', async () => {
