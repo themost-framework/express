@@ -62,3 +62,5 @@ export declare function postEntitySetAction(options?: EntitySetOptions): Request
 export declare function getEntityFunction(options?: EntityOptions): RequestHandler;
 
 export declare function postEntityAction(options?: EntityOptions): RequestHandler;
+
+export declare function setHeaders(): RequestHandler;

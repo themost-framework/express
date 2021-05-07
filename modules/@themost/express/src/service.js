@@ -15,6 +15,7 @@ import {bindEntitySet} from "./middleware";
 import {getEntitySet} from "./middleware";
 import {postEntitySet} from "./middleware";
 import {deleteEntitySet} from "./middleware";
+import { setHeaders } from './middleware';
 import {getEntity} from "./middleware";
 import {postEntity} from "./middleware";
 import {deleteEntity} from "./middleware";
@@ -45,7 +46,7 @@ function readStream(stream) {
         });
     });
 }
-
+serviceRouter.use(setHeaders());
 /* GET /  */
 serviceRouter.get('/', getEntitySetIndex());
 

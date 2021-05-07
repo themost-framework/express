@@ -88,6 +88,32 @@ describe('serviceRouter', () => {
         //
     });
 
+    it('should GET /api/', async () => {
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .get('/api/')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.headers['odata-version']).toBe('4.0');
+    });
+
+    it('should GET /api/$metadata', async () => {
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .get('/api/$metadata');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.headers['odata-version']).toBe('4.0');
+    });
+
     it('should GET /api/users/', async () => {
         // change user
         spyOn(passportStrategy, 'getUser').and.returnValue({
@@ -99,6 +125,7 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
+        expect(response.headers['odata-version']).toBe('4.0');
     });
 
     it('should use an entity set function', async () => {

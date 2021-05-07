@@ -1,7 +1,7 @@
 # IDE
-.idea
+.idea/
 .DS_Store
-.vscode
+.vscode/
 # Logs
 logs
 *.log
