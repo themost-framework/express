@@ -55,7 +55,7 @@
             "name": "releaseDate",
             "title": "Release Date",
             "description": "The release date of a product or product model. This can be used to distinguish the exact variant of a product.",
-            "type": "Date"
+            "type": "DateTime"
         }
     ],
     "constraints": [

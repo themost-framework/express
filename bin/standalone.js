@@ -36,7 +36,7 @@ let host = process.env.HOST || 'localhost';
  // create a new instance of data application
  const dataApplication = new ExpressDataApplication(path.resolve(__dirname, '../modules/@themost/express/src/test/config'));
 
-
+ dataApplication.getService(ODataModelBuilder).defaultNamespace = 'Test1';
  dataApplication.getService(ODataModelBuilder).hasContextLink((context) => {
     return `http://${host}:${port}/api/$metadata`;
  });
