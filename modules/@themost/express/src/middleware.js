@@ -13,6 +13,7 @@ import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedE
 import { ResponseFormatter, StreamFormatter } from "./formatter";
 import {multerInstance} from "./multer";
 import fs from 'fs';
+import onHeaders from 'on-headers';
 
 const parseBoolean = LangUtils.parseBoolean;
 const DefaultTopOption = 25;
@@ -1621,8 +1622,18 @@ function getEntitySetIndex() {
         const builder = req.context.getApplication().getStrategy(ODataModelBuilder);
         // get edm document
         return builder.getEdm().then(result => {
+            let contextLink
+            if (typeof builder.getContextLink === 'function') {
+                contextLink = builder.getContextLink(req.context);
+                if (contextLink) {
+                    return res.json({
+                        "@odata.context": contextLink,
+                        "value": result.entityContainer.entitySet
+                    });
+                }
+            }
             return res.json({
-                value: result.entityContainer.entitySet
+                "value": result.entityContainer.entitySet
             });
         }).catch(err => {
             return next(err);
@@ -1653,6 +1664,20 @@ function getMetadataDocument() {
     };
 }
 
+function setHeaders() {
+    return function(_req, res, next) {
+        onHeaders(res, 
+            /**
+             * @this {ServerResponse}
+             */
+            function onSetHeaders() {
+            this.set('OData-Version', '4.0');
+        });
+        return next();
+    }
+}
+
+export {setHeaders};
 export {getEntitySetIndex};
 export {getMetadataDocument};
 export {bindEntitySet};
