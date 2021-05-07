@@ -89,7 +89,7 @@ describe('serviceRouter', () => {
         //
     });
 
-    fit('should GET /api/', async () => {
+    it('should GET /api/', async () => {
         // change user
         spyOn(passportStrategy, 'getUser').and.returnValue({
             name: 'alexis.rees@example.com'
