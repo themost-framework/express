@@ -29,7 +29,7 @@ describe('EntitySetFunction', () => {
         app.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
     });
 
-    it('should GET /api/users/me', async () => {
+    fit('should GET /api/users/me', async () => {
         spyOn(passportStrategy, 'getUser').and.returnValue({
             name: 'alexis.rees@example.com'
         });
@@ -40,6 +40,20 @@ describe('EntitySetFunction', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.name).toBe('alexis.rees@example.com');
+        // get user by id
+        const id = response.body.id;
+        response = await request(app)
+            .get(`/api/users/${id}`)
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.name).toBe('alexis.rees@example.com');
+        response = await request(app)
+            .get(`/api/users/a100`)
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toBe(400);
     });
 
     it('should GET /api/users/active?name=?', async () => {

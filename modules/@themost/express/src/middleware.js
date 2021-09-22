@@ -8,8 +8,14 @@
 import _ from "lodash";
 
 import Q from "q";
-import {ODataModelBuilder, EdmMapping, DataQueryable, EdmType} from "@themost/data";
-import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError} from '@themost/common';
+import {ODataModelBuilder, EdmMapping, DataQueryable, EdmType, DataTypeValidator} from "@themost/data";
+import {
+    LangUtils,
+    HttpNotFoundError,
+    HttpBadRequestError,
+    HttpMethodNotAllowedError,
+    DataError, NotNullError
+} from '@themost/common';
 import { ResponseFormatter, StreamFormatter } from "./formatter";
 import {multerInstance} from "./multer";
 import fs from 'fs';
@@ -437,14 +443,29 @@ function getEntity(options) {
         const filter = _.pick(req.query, ['$select', '$expand']);
         // apply filter
         thisModel.filter(filter).then(q => {
+            // validate the given entity identifier
+            const dataType = thisModel.getAttribute(thisModel.primaryKey).type;
+            const validator = new DataTypeValidator(dataType);
+            validator.setContext(req.context);
+            const key = req.params[opts.from];
+            if (key == null) {
+                return next(new NotNullError('Entity identifier cannot be empty'));
+            }
+            if (validator.validateSync(key) != null) {
+                const validationError = new DataError('E_PATTERN','Entity identifier is of a wrong type or has invalid format', null, thisModel.name, thisModel.primaryKey);
+                // bad request
+                validationError.statusCode = 400;
+                // throw error
+                return next(validationError);
+            }
             // set query for item
-            return q.where(thisModel.primaryKey).equal(req.params[opts.from]).getItem().then(value => {
+            return q.where(thisModel.primaryKey).equal(key).getItem().then(value => {
                 // if value is undefined
                 if (typeof value === 'undefined') {
                     // send not found
                     return next();
                 }
-                // othwerwise return object
+                // otherwise return object
                 return tryFormat(value, req, res);
             });
         }).catch(err => {
