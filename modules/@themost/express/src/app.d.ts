@@ -1,5 +1,5 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2017-2020, THEMOST LP All rights reserved
-import {ConfigurationBase, IApplication, IApplicationService} from '@themost/common';
+import {ConfigurationBase, IApplication, IApplicationService, ApplicationBase} from '@themost/common';
 import {DefaultDataContext, ODataModelBuilder} from '@themost/data';
 import {Application, RequestHandler, Router} from 'express';
 import {BehaviorSubject} from 'rxjs';
@@ -7,7 +7,7 @@ import {BehaviorSubject} from 'rxjs';
 export declare class ApplicationServiceRouter implements IApplicationService {
     public serviceRouter: Router;
 
-    public getApplication(): IApplication;
+    public getApplication(): ApplicationBase;
 }
 
 export declare class ExpressDataApplication {
