@@ -9,7 +9,7 @@ import _ from "lodash";
 
 import Q from "q";
 import {ODataModelBuilder, EdmMapping, DataQueryable, EdmType} from "@themost/data";
-import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError} from '@themost/common';
+import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError, TraceUtils} from '@themost/common';
 import { ResponseFormatter, StreamFormatter } from "./formatter";
 import {multerInstance} from "./multer";
 import fs from 'fs';
@@ -1536,6 +1536,17 @@ function postEntityAction(options) {
                                         bufferedStream.contentEncoding = file.encoding;
                                         bufferedStream.contentType = file.mimetype;
                                         bufferedStream.contentFileName = file.originalname;
+                                        bufferedStream.on('close', () => {
+                                            TraceUtils.debug(`(postEntityAction), Closing read stream, ${file.path}`);
+                                            try {
+                                                if (fs.existsSync(file.path)) {
+                                                    fs.unlinkSync(file.path);
+                                                }
+                                            } catch (error) {
+                                                TraceUtils.warn(`(postEntityAction) An error occurred while trying to cleanup user uploaded content ${file.path}`);
+                                                TraceUtils.warn(error);
+                                            }
+                                        });
                                     }
                                 }
                                 if (bufferedStream == null && x.nullable === false) {
@@ -1548,7 +1559,6 @@ function postEntityAction(options) {
                                 } else {
                                     actionParameters.push(req.body[x.name]);
                                 }
-
                             }
                         });
                     }
@@ -1595,8 +1605,7 @@ function postEntityAction(options) {
                     }).catch(function(err) {
                         return next(err);
                     });
-                })
-
+                });
             }
             // entity type does not have an instance method with the given name, continue
             return next();
