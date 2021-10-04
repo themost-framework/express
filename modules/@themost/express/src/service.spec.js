@@ -562,6 +562,56 @@ describe('serviceRouter', () => {
 
     });
 
+    it('should post file that exceeds file limit', async () => {
+        const app1 = express();
+        // create a new instance of data application
+        const application = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+
+        app1.use(express.json({
+            reviver: dateReviver
+        }));
+        // hold data application
+        app1.set('ExpressDataApplication', application);
+        // use data middleware (register req.context)
+        app1.use(application.middleware(app1));
+        // use test passport strategy
+        passport.use(passportStrategy);
+        // set service router
+        app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
+        // change user
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+
+        application.getConfiguration().setSourceAt('settings/multer', {
+           limits: {
+            fileSize: 100
+           }
+        });
+
+        let response = await request(app1)    
+            .post('/api/users/me/uploadAvatar')
+            .field('alternateName', 'testing')
+            .field('published', true)
+            .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
+        expect(response.status).toBe(500);
+        expect(response.text.includes('File too large')).toBeTruthy();
+
+        application.getConfiguration().setSourceAt('settings/multer', {
+            limits: {
+             fileSize: 2000000
+            }
+         });
+
+         response = await request(app1)    
+            .post('/api/users/me/uploadAvatar')
+            .field('alternateName', 'testing')
+            .field('published', true)
+            .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
+        expect(response.status).toBe(200);
+
+    });
+
     it('should post file for entity set action', async () => {
         const app1 = express();
         // create a new instance of data application

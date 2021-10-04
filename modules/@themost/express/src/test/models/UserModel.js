@@ -1,6 +1,7 @@
 const {DataObject, EdmMapping, EdmType} = require('@themost/data');
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 function readStream(stream) {
     // eslint-disable-next-line no-undef
@@ -56,8 +57,8 @@ class User extends DataObject {
     @EdmMapping.param('file', EdmType.EdmStream, false)
     @EdmMapping.action('uploadAvatar', 'Object')
     async uploadAvatar(file, attributes) {
+        // eslint-disable-next-line no-unused-vars
         const blob = await readStream(file);
-        console.log('Content-Type', file.contentType);
         return Object.assign({}, attributes, {
             dateCreated: new Date()
         });
@@ -73,6 +74,7 @@ class User extends DataObject {
     @EdmMapping.param('file', EdmType.EdmStream, false)
     @EdmMapping.action('uploadTestAvatar', 'Object')
     static async uploadTestAvatar(context, file, attributes) {
+        // eslint-disable-next-line no-unused-vars
         const blob = await readStream(file);
         return Object.assign({}, attributes, {
             dateCreated: new Date()
@@ -95,6 +97,7 @@ class User extends DataObject {
     }
 
     @EdmMapping.func('staticEmptyContent', 'Object')
+    // eslint-disable-next-line no-unused-vars
     static getStaticEmptyContent(context) {
         return null;
     }
@@ -111,12 +114,14 @@ class User extends DataObject {
 
     @EdmMapping.param('message', EdmType.EdmString, false)
     @EdmMapping.action('emptyContent', 'Object')
+    // eslint-disable-next-line no-unused-vars
     postEmptyContent(message) {
         return null;
     }
 
     @EdmMapping.param('message', EdmType.EdmString, false)
     @EdmMapping.action('staticEmptyContent', 'Object')
+    // eslint-disable-next-line no-unused-vars
     static staticPostEmptyContent(context, message) {
         return null;
     }

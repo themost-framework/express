@@ -8,4 +8,6 @@ test
 .vscode
 .eslintignore
 rollup.config.js
+babel.config.js
+jsconfig.json
 
