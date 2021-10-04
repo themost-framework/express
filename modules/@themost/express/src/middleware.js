@@ -1163,8 +1163,8 @@ function postEntitySetAction(options) {
             }
             // add context as the first parameter
             actionParameters.push(req.context);
-
-            let tryGetStream = tryGetActionStream(parameters);
+            const multerOptions = req.context.getApplication().getConfiguration().getSourceAt('settings/multer');
+            let tryGetStream = tryGetActionStream(parameters, multerOptions);
             return tryGetStream(req, res, (err) => {
                 if (err) {
                     return next(err);
@@ -1187,6 +1187,17 @@ function postEntitySetAction(options) {
                                     bufferedStream.contentEncoding = file.encoding;
                                     bufferedStream.contentType = file.mimetype;
                                     bufferedStream.contentFileName = file.originalname;
+                                    bufferedStream.on('close', () => {
+                                        TraceUtils.debug(`(postEntitySetAction), Closing read stream, ${file.path}`);
+                                        try {
+                                            if (fs.existsSync(file.path)) {
+                                                fs.unlinkSync(file.path);
+                                            }
+                                        } catch (error) {
+                                            TraceUtils.warn(`(postEntitySetAction) An error occurred while trying to cleanup user uploaded content ${file.path}`);
+                                            TraceUtils.warn(error);
+                                        }
+                                    });
                                 }
                             }
                             if (bufferedStream == null && x.nullable === false) {
@@ -1415,9 +1426,10 @@ function getEntityFunction(options) {
 
 /**
  * @param actionParameters
+ * @param {*} options
  * @returns {function(*, *, *): *}
  */
-function tryGetActionStream(actionParameters) {
+function tryGetActionStream(actionParameters, options) {
     let result = function(req, res, next) {
         return next();
     };
@@ -1427,7 +1439,7 @@ function tryGetActionStream(actionParameters) {
     });
     if (files.length>0) {
         // use multer()
-        result = multerInstance().fields(files.map((x) => {
+        result = multerInstance(options).fields(files.map((x) => {
             return {
                 name: x.name
             }
@@ -1512,7 +1524,8 @@ function postEntityAction(options) {
                 const parameters = _.filter(action.parameters, x => {
                     return x.name !== 'bindingParameter';
                 });
-                let tryGetStream = tryGetActionStream(parameters);
+                const multerOptions = req.context.getApplication().getConfiguration().getSourceAt('settings/multer');
+                let tryGetStream = tryGetActionStream(parameters, multerOptions);
                 return tryGetStream(req, res, (err) => {
                     if (err) {
                         return next(err);
