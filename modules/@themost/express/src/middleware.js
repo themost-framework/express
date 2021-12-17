@@ -1352,7 +1352,7 @@ function getEntityFunction(options) {
                     // get return entity set
                     returnEntitySet = builder.getEntityTypeEntitySet(func.returnCollectionType);
                 }
-                const returnModel = req.context.model(func.returnType || func.returnCollectionType);
+                let returnModel = req.context.model(func.returnType || func.returnCollectionType);
                 const funcParameters = [];
                 _.forEach(func.parameters, x => {
                     if (x.name !== 'bindingParameter') {
@@ -1365,7 +1365,12 @@ function getEntityFunction(options) {
                     }
                     if (result instanceof DataQueryable) {
                         if (_.isNil(returnModel)) {
-                            return next(new HttpNotFoundError("Result Entity not found"));
+                            if (func.returnCollectionType === 'Object') {
+                                returnModel = req.context.model(result.model.name);
+                            }
+                            if (returnModel == null) {
+                                return next(new common.HttpNotFoundError("Result Entity not found"));
+                            }
                         }
                         const filter = Q.nbind(returnModel.filter, returnModel);
                         //if the return value is a single instance
