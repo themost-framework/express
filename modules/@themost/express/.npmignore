@@ -1,12 +1,19 @@
 # IDE
 .idea
+.vscode
+.theia
 .DS_Store
+
 # dev
 node_modules
+
 test
 *.spec.js
-.vscode
+
+# eslint
 .eslintignore
+
+# build
 rollup.config.js
 babel.config.js
 jsconfig.json
