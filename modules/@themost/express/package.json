@@ -1,6 +1,6 @@
 {
   "name": "@themost/express",
-  "version": "1.5.20",
+  "version": "1.5.21",
   "description": "MOST Data ORM Express Middleware",
   "main": "dist/themost_express.cjs.js",
   "module": "dist/themost_express.esm.js",
@@ -10,12 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kbarbounakis/most-data-express.git"
+    "url": "git+https://github.com/themost-framework/express.git"
   },
   "keywords": [
     "@themost",
     "data",
-    "orm",
+    "database",
+    "OData",
+    "ORM",
+    "api",
     "express",
     "middleware",
     "expressjs"
@@ -23,9 +26,9 @@
   "author": "Kyriakos Barbounakis <k.barbounakis@gmail.com>",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/kbarbounakis/most-data-express/issues"
+    "url": "https://github.com/themost-framework/express/issues"
   },
-  "homepage": "https://github.com/kbarbounakis/most-data-express#readme",
+  "homepage": "https://github.com/themost-framework/express#readme",
   "devDependencies": {},
   "peerDependencies": {
     "@themost/common": "^2",
