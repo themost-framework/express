@@ -97,4 +97,29 @@ serviceRouter.post('/:entitySet/:id', bindEntitySet(), postEntity());
 /* DELETE /:entitySet/:id deletes a data object by id. */
 serviceRouter.delete('/:entitySet/:id', bindEntitySet(), deleteEntity());
 
-export {serviceRouter, readStream};
+Object.defineProperty(serviceRouter, 'alternateName', {
+    configurable: true,
+    enumerable: true,
+    writable: false,
+    value: 'serviceRouter'
+});
+
+function findByAlternateName(item) {
+    if (typeof item.handle === 'function' && item.handle.alternateName === 'serviceRouter') {
+        return item;
+    }
+    if (Array.isArray(item.stack)) {
+        return item.stack.find(findByAlternateName);
+    }
+}
+
+function getServiceRouter(app) {
+    if (app && app._router && app._router.stack) {
+        const router = app._router.stack.find(findByAlternateName);
+        if (router) {
+            return router.handle;
+        }
+    }
+}
+
+export {serviceRouter, readStream, getServiceRouter};

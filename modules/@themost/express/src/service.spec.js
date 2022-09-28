@@ -4,7 +4,7 @@ import request from 'supertest';
 import express from 'express';
 import BearerStrategy from 'passport-http-bearer';
 import passport from 'passport';
-import {serviceRouter} from './service';
+import {serviceRouter, getServiceRouter} from './service';
 import {dateReviver} from './helpers';
 import { ApplicationService } from '@themost/common';
 
@@ -99,6 +99,65 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
+    });
+
+
+    it('should find service router', async () => {
+        const router = getServiceRouter(app);
+        expect(router).toBeTruthy();
+        expect(router.use).toBeInstanceOf(Function);
+        const addRoute = express.Router();
+        addRoute.get('/:entitySet', function customMiddleware(req, res, next) {
+            res.set('X-Custom-Header', 'Custom')
+            return next();
+        });
+        router.stack.unshift(...addRoute.stack);
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .get('/api/users/')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toEqual(200);
+        expect(response.get('X-Custom-Header')).toEqual('Custom');
+    });
+
+    it('should customize service router and set default query option', async () => {
+        const router = getServiceRouter(app);
+        expect(router).toBeTruthy();
+        expect(router.use).toBeInstanceOf(Function);
+        const addRoute = express.Router();
+        addRoute.get('/:entitySet', function customMiddleware(req, res, next) {
+            if (Object.prototype.hasOwnProperty.call(req.query, '$top') === false) {
+                Object.assign(req.query, { $top: 10 });
+            }
+            return next();
+        });
+        router.stack.unshift(...addRoute.stack);
+        spyOn(passportStrategy, 'getUser').and.returnValue({
+            name: 'alexis.rees@example.com'
+        });
+        let response = await request(app)
+            .get('/api/users/')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toEqual(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.value).toBeInstanceOf(Array);
+        expect(response.body.value.length).toEqual(10);
+
+        response = await request(app)
+            .get('/api/users/')
+            .query({
+                $top: 20
+            })
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toEqual(200);
+        expect(response.body).toBeTruthy();
+        expect(response.body.value).toBeInstanceOf(Array);
+        expect(response.body.value.length).toEqual(20);
     });
 
     it('should use an entity set function', async () => {
