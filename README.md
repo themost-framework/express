@@ -1,6 +1,6 @@
 [![npm](https://img.shields.io/npm/v/@themost%2Fexpress.svg)](https://www.npmjs.com/package/@themost%2Fexpress)
-![](https://github.com/themost-framework/express/workflows/test/badge.svg) 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dfea8d9613474170b13e298d416c5c37)](https://www.codacy.com/manual/themost-framework/express?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=themost-framework/express&amp;utm_campaign=Badge_Grade)
+![](https://github.com/themost-framework/express/workflows/test/badge.svg)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/15b61e7d887344358d3b9f15da638ba0)](https://www.codacy.com/gh/themost-framework/express/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=themost-framework/express&amp;utm_campaign=Badge_Grade)
 ![GitHub top language](https://img.shields.io/github/languages/top/themost-framework/express)
 [![License](https://img.shields.io/npm/l/@themost/express.svg)](/LICENSE)
 ![GitHub last commit](https://img.shields.io/github/last-commit/themost-framework/express)
