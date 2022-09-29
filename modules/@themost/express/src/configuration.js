@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://themost.io/license
  */
 ///
-import {ModuleLoaderStrategy} from '@themost/common';
+import {ModuleLoaderStrategy, TraceUtils} from '@themost/common';
 // noinspection JSUnusedGlobalSymbols
 /**
  * @class
@@ -36,7 +36,10 @@ class ServicesConfiguration {
                  * @param {ServiceConfigurationElement} x
                  */
                 x => {
-                    if (typeof x.serviceType === 'undefined' || x.serviceType === null) {
+                    if (Object.prototype.hasOwnProperty.call(x, '-serviceType')) {
+                        return;
+                    }
+                    if (Object.prototype.hasOwnProperty.call(x, 'serviceType') === false) {
                         throw new Error('Invalid configuration. Service type cannot be empty at this context.');
                     }
                     const strategyType = x.strategyType || x.serviceType;
