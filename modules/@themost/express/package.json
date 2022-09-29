@@ -1,6 +1,6 @@
 {
   "name": "@themost/express",
-  "version": "1.5.22",
+  "version": "1.5.23",
   "description": "MOST Data ORM Express Middleware",
   "main": "dist/themost_express.cjs.js",
   "module": "dist/themost_express.esm.js",
