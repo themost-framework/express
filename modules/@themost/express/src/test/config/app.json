@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../docs/schemas/applicationConfiguration.json",
     "settings": {
         "crypto": {
             "algorithm": "aes256",

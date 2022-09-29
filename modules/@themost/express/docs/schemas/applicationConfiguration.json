@@ -1,0 +1,188 @@
+{
+  "$id": "https://themost-framework.github.io/express/schemas/applicationConfiguration.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "@themost/express application configuration schema",
+  "type": "object",
+  "properties": {
+    "services": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/serviceConfiguration" },
+      "description": "Represents an array of services that are going to be registered during application startup"
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "loaders": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/loaderConfiguration" }
+            }
+          }
+        }
+      }
+    },
+    "adapterTypes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adapterTypeConfiguration" }
+    },
+    "adapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adapterConfiguration" }
+    }
+  },
+  "required": [
+  ],
+  "description": "Describes the schema of an application configuration file",
+  "$defs": {
+    "serviceConfiguration": {
+      "type": "object",
+      "oneOf": [
+        {
+          "properties": {
+            "serviceType": {
+              "type": "string",
+              "description": "A string which represents the module and the service constructor separated by hash",
+              "example": "./module#ServiceConstructor"
+            },
+            "strategyType": {
+              "type": "string",
+              "description": "A string which represents the module and the strategy constructor separated by hash",
+              "example": "./module#ServiceStrategyConstructor"
+            }
+          },
+          "required": [
+            "serviceType"
+          ]
+        },
+        {
+          "properties": {
+            "-serviceType": {
+              "type": "string",
+              "description": "A string which represents the module and the service constructor separated by hash. A service type marked with a minus will be omitted at next startup.",
+              "example": "./module#ServiceConstructor"
+            },
+            "strategyType": {
+              "type": "string",
+              "description": "A string which represents the module and the strategy constructor separated by hash",
+              "example": "./module#ServiceStrategyConstructor"
+            }
+          },
+          "required": [
+            "-serviceType"
+          ]
+        }
+      ]
+    },
+    "loaderConfiguration": {
+      "type": "object",
+      "description": "A collection of schema loaders that are going to loaded during startup",
+      "oneOf": [
+        {
+          "properties": {
+            "loaderType": {
+              "type": "string",
+              "description": "A string which represents the module and the schema loader constructor separated by hash",
+              "example": "./module#SchemaLoaderConstructor"
+            }
+          },
+          "required": [
+            "loaderType"
+          ]
+        },
+        {
+          "properties": {
+            "-loaderType": {
+              "type": "string",
+              "description": "A string which represents the module and the schema loader constructor separated by hash. A loader type marked with minus will be ignored during application startup",
+              "example": "./module#SchemaLoaderConstructor"
+            }
+          },
+          "required": [
+            "-loaderType"
+          ]
+        }
+      ]
+    },
+    "adapterTypeConfiguration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A string which represents the name of this adapter type e.g. Sqlite Data Adapter"
+        },
+        "invariantName": {
+          "type": "string",
+          "description": "A string which represents the invariant name of this adapter type e.g. sqlite. This name will be used to refer to this adapter type",
+          "oneOf": [
+            {
+              "enum": [ "sqlite", "mssql", "pg", "mysql", "h2", "oracle", "mongo" ]
+            },
+            {
+              "not": {
+                "enum": [ "sqlite", "mssql", "pg", "mysql", "h2", "oracle", "mongo" ]
+              }
+            }
+          ]
+        },
+        "type": {
+          "type": "string",
+          "oneOf": [
+            {
+              "not": {
+                "enum": [ "@themost/sqlite", "@themost/mssql", "@themost/pg", "@themost/mysql", "@themost/h2", "@themost/oracle", "@themost/mongo" ]
+              }
+            },
+            {
+              "enum": [ "@themost/sqlite", "@themost/mssql", "@themost/pg", "@themost/mysql", "@themost/h2", "@themost/oracle", "@themost/mongo" ]
+            }
+          ],
+          "description": "A string which represents the module which exports this adapter type e.g. @themost/sqlite, @themost/pg, @themost/mysql, @themost/msql etc"
+        }
+      },
+      "required": [
+        "invariantName",
+        "type"
+      ]
+    },
+    "adapterConfiguration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A string which represents the name of this adapter e.g. development",
+          "default": "development"
+        },
+        "invariantName": {
+          "type": "string",
+          "description": "A string which represents the invariant name of the adapter type e.g. sqlite.",
+          "oneOf": [
+            {
+              "enum": [ "sqlite", "mssql", "pg", "mysql", "h2", "oracle", "mongo" ]
+            },
+            {
+              "not": {
+                "enum": [ "sqlite", "mssql", "pg", "mysql", "h2", "oracle", "mongo" ]
+              }
+            }
+          ]
+        },
+        "default": {
+          "type": "boolean",
+          "description": "A boolean which indicates whether this adapter is the default database adapter or not."
+        },
+        "options": {
+          "type": "object",
+          "default": {}
+        }
+      },
+      "required": [
+        "name",
+        "default",
+        "invariantName",
+        "options"
+      ]
+    }
+  }
+}
