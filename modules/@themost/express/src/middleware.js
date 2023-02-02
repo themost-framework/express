@@ -1,10 +1,4 @@
-/**
- * MOST Web Framework 2.0 Codename Blueshift
- * Copyright (c) 2017, THEMOST LP All rights reserved
- *
- * Use of this source code is governed by an BSD-3-Clause license that can be
- * found in the LICENSE file at https://themost.io/license
- */
+// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
 import _ from "lodash";
 
 import Q from "q";
@@ -1369,7 +1363,7 @@ function getEntityFunction(options) {
                                 returnModel = req.context.model(result.model.name);
                             }
                             if (returnModel == null) {
-                                return next(new common.HttpNotFoundError("Result Entity not found"));
+                                return next(new HttpNotFoundError("Result Entity not found"));
                             }
                         }
                         const filter = Q.nbind(returnModel.filter, returnModel);

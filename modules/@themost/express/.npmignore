@@ -12,6 +12,7 @@ test
 
 # eslint
 .eslintignore
+.eslintrc
 
 # build
 rollup.config.js
