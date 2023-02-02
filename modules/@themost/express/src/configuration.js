@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://themost.io/license
  */
 ///
-import {ModuleLoaderStrategy, TraceUtils} from '@themost/common';
+import {ModuleLoaderStrategy} from '@themost/common';
 // noinspection JSUnusedGlobalSymbols
 /**
  * @class

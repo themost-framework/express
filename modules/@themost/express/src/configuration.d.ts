@@ -1,4 +1,4 @@
-// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2017-2020, THEMOST LP All rights reserved
+// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
 import {ExpressDataApplication} from './app';
 
 export declare interface ServiceConfigurationElement {

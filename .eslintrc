@@ -1,10 +1,10 @@
 {
     "parser": "babel-eslint",
     "env": {
-        "browser": true,
+        "browser": false,
         "node": true,
         "es6": true,
-        "jquery": true
+        "jquery": false
     },
     "globals": {
         "describe": false,
