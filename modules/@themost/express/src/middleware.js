@@ -1180,7 +1180,7 @@ function postEntitySetAction(options) {
                                     bufferedStream = fs.createReadStream(file.path);
                                     bufferedStream.contentEncoding = file.encoding;
                                     bufferedStream.contentType = file.mimetype;
-                                    bufferedStream.contentFileName = file.originalname;
+                                    bufferedStream.contentFileName = Buffer.from(file.originalname, 'latin1').toString('utf-8');
                                     bufferedStream.on('close', () => {
                                         TraceUtils.debug(`(postEntitySetAction), Closing read stream, ${file.path}`);
                                         try {
@@ -1547,7 +1547,7 @@ function postEntityAction(options) {
                                         bufferedStream = fs.createReadStream(file.path);
                                         bufferedStream.contentEncoding = file.encoding;
                                         bufferedStream.contentType = file.mimetype;
-                                        bufferedStream.contentFileName = file.originalname;
+                                        bufferedStream.contentFileName = Buffer.from(file.originalname, 'latin1').toString('utf-8');
                                         bufferedStream.on('close', () => {
                                             TraceUtils.debug(`(postEntityAction), Closing read stream, ${file.path}`);
                                             try {
