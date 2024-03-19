@@ -150,12 +150,9 @@ function tryFormat(data, req, res) {
  * @param {NextFunction} next
  */
 function tryFormatStream(data, req, res, next) {
-    if (req.context) {
-        return req.context.finalize(() => {
-            return new StreamFormatter(data).execute(req, res, next);
-        });
-    }
-    return new StreamFormatter(data).execute(req, res, next);
+    return finalizeContext(req, () => {
+        return new StreamFormatter(data).execute(req, res, next);
+    });
 }
 
 /**
