@@ -105,6 +105,13 @@ const DefaultTopOption = 25;
  * @returns string
  */
 
+function finalizeContext(req, next) {
+    if (req && req.context && typeof req.context.finalize === 'function') {
+        return req.context.finalize(next);
+    }
+    return next();
+}
+
 /**
  * Gets or sets the name of the route parameter that holds the name of an entity function
  * @property
@@ -118,20 +125,22 @@ const DefaultTopOption = 25;
  * @param {*} res
  */
 function tryFormat(data, req, res) {
-    // get response formatter
-    const responseFormatter = req.context.getApplication().getStrategy(ResponseFormatter);
-    //if service exists
-    if (responseFormatter) {
-        // call Response.format with formatter
-        return res.format(responseFormatter.format(data).for(req, res));
-    }
-    // fallback to json
-    if (data == null) {
-        // send no content if data is empty
-        return res.status(204).type('application/json').send();
-    }
-    // otherwise send json data
-    return res.json(data);
+    // finalize context
+    return finalizeContext(req, () => {
+        // get response formatter
+        const responseFormatter = req.context.getApplication().getStrategy(ResponseFormatter);
+        //if service exists
+        if (responseFormatter) {
+            // call Response.format with formatter
+            return res.format(responseFormatter.format(data).for(req, res));
+        }
+        if (data == null) {
+            // send no content if data is empty
+            return res.status(204).type('application/json').send();
+        }
+        // otherwise send json data
+        return res.json(data);
+    });
  }
 
 /**
@@ -141,6 +150,11 @@ function tryFormat(data, req, res) {
  * @param {NextFunction} next
  */
 function tryFormatStream(data, req, res, next) {
+    if (req.context) {
+        return req.context.finalize(() => {
+            return new StreamFormatter(data).execute(req, res, next);
+        });
+    }
     return new StreamFormatter(data).execute(req, res, next);
 }
 

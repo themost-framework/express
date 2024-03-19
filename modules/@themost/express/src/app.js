@@ -251,8 +251,8 @@ class ExpressDataApplication extends IApplication {
               return context;
             }
           });
-          req.on('end', () => {
-            //on end
+          res.on('close', () => {
+            //on clse
             if (req.context) {
               //finalize data context
               return req.context.finalize( () => {
