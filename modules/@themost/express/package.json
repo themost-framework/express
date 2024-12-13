@@ -1,6 +1,6 @@
 {
   "name": "@themost/express",
-  "version": "1.7.0",
+  "version": "2.1.1",
   "description": "MOST Data ORM Express Middleware",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -32,15 +32,14 @@
     "url": "https://github.com/themost-framework/express/issues"
   },
   "homepage": "https://github.com/themost-framework/express#readme",
-  "devDependencies": {},
   "peerDependencies": {
     "@themost/common": "^2",
+    "@themost/data": "^2",
     "@themost/query": "^2",
-    "@themost/xml": "^2",
-    "@themost/data": "^2"
+    "@themost/xml": "^2"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "express": "^4.21.2",
     "lodash": "^4.17.11",
     "multer": "^1.4.5-lts.1",
     "pluralize": "^7.0.0",
