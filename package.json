@@ -1,5 +1,5 @@
 {
-  "name": "most-data-express-src",
+  "name": "@themost/express-src",
   "version": "2.1.1",
   "private": true,
   "description": "MOST Data ORM Express Middleware",
