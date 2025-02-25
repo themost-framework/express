@@ -252,9 +252,13 @@ class ExpressDataApplication extends IApplication {
             }
           });
           res.on('close', () => {
-            //on clse
             if (req.context) {
-              //finalize data context
+                // if db is a disposable adapter
+                if (req.context.db && typeof req.context.db.dispose === 'function') {
+                    // dispose db
+                    req.context.db.dispose();
+                }
+              // and finalize data context
               return req.context.finalize( () => {
                 //
               });
