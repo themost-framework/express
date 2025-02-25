@@ -1,5 +1,6 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
-import {ConfigurationBase, IApplicationService, ApplicationBase} from '@themost/common';
+// tslint:disable-next-line:ordered-imports
+import {ConfigurationBase, IApplicationService, ApplicationBase, DataAdapterBase} from '@themost/common';
 import {DefaultDataContext, ODataModelBuilder} from '@themost/data';
 import {Application, RequestHandler, Router} from 'express';
 import {BehaviorSubject} from 'rxjs';
@@ -104,5 +105,11 @@ declare global {
         interface Request {
             context: ExpressDataContext;
         }
+    }
+}
+
+module '@themost/common' {
+    interface DataAdapterBase {
+        dispose(): void;
     }
 }
