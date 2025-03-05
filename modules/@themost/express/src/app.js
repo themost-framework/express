@@ -239,6 +239,9 @@ class ExpressDataApplication extends IApplication {
             },
             set: function(value) {
               req.user = value;
+              if (typeof context.refreshState === 'function') {
+                context.refreshState();
+              }
             }
           });
           /**
