@@ -31,5 +31,8 @@ jsconfig.json
 # github
 .github
 
+typescript
+tsconfig.json
+
 
 

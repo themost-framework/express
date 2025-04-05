@@ -85,10 +85,6 @@ export interface InteractiveUser {
 
 export declare class ExpressDataContext extends DefaultDataContext {
 
-    public interactiveUser?: InteractiveUser;
-
-    public user?: AuthenticatedUser;
-
     public application: ExpressDataApplication;
 
     public getConfiguration(): ConfigurationBase;
@@ -108,7 +104,7 @@ declare global {
     }
 }
 
-module '@themost/common' {
+declare module '@themost/common' {
     interface DataAdapterBase {
         dispose(): void;
     }
