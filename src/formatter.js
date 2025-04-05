@@ -7,7 +7,6 @@ class HttpResponseFormatter {
     /**
      * @param {*} data 
      */
-    // eslint-disable-next-line no-unused-vars
     constructor(data) {
         Object.defineProperty(this, 'data', {
             configurable: true,
@@ -34,7 +33,6 @@ class XmlResponseFormatter extends HttpResponseFormatter {
      * @param {Request} req 
      * @param {Response} res 
      */
-    // eslint-disable-next-line no-unused-vars
     execute(req, res) {
         if (this.data == null) {
             return res.status(204).type('application/xml').send();
@@ -52,7 +50,6 @@ class JsonResponseFormatter extends HttpResponseFormatter {
      * @param {Request} req 
      * @param {Response} res
      */
-    // eslint-disable-next-line no-unused-vars
     execute(req, res) {
         // if data is empty
         if (this.data == null) {
@@ -90,7 +87,6 @@ class ResponseFormatter extends ApplicationService {
     constructor(app) {
         super(app);
         // add default formatters
-        // eslint-disable-next-line no-undef
         this.formatters = new Map();
         // add default formatter application/json
         this.formatters.set('default', JsonResponseFormatter);
@@ -126,7 +122,6 @@ class StreamFormatter {
      * @param {Response} res
      * @param {NextFunction} next
      */
-    // eslint-disable-next-line no-unused-vars
     execute(req, res, next) {
         // handle empty data
         if (this.data == null) {
