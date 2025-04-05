@@ -16,6 +16,6 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm unpublish @themost/express@next
-      - run: npm publish ./modules/@themost/express/ --access=public --tag next
+      - run: npm publish . --access=public --tag next
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
