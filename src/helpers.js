@@ -4,7 +4,7 @@ const DateTimeRegex = /^\d{4}-([0]\d|1[0-2])-([0-2]\d|3[01])(?:[T ](\d+):(\d+)(?
  * Helper function for converting a formatted date time string to Date object while parsing a JSON document
  */
 function dateReviver(key, value) {
-    if (typeof value === "string" && DateTimeRegex.test(value)) {
+    if (typeof value === 'string' && DateTimeRegex.test(value)) {
         return new Date(value);
     }
     return value;

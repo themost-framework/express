@@ -3,21 +3,21 @@ import express from 'express';
 
 const serviceRouter = express.Router();
 
-import {getEntitySetIndex} from "./middleware";
-import {getMetadataDocument} from "./middleware";
-import {bindEntitySet} from "./middleware";
-import {getEntitySet} from "./middleware";
-import {postEntitySet} from "./middleware";
-import {deleteEntitySet} from "./middleware";
-import {getEntity} from "./middleware";
-import {postEntity} from "./middleware";
-import {deleteEntity} from "./middleware";
-import {getEntityNavigationProperty} from "./middleware";
-import {getEntitySetFunction} from "./middleware";
-import {postEntitySetFunction} from "./middleware";
-import {postEntitySetAction} from "./middleware";
-import {getEntityFunction} from "./middleware";
-import {postEntityAction} from "./middleware";
+import {getEntitySetIndex} from './middleware';
+import {getMetadataDocument} from './middleware';
+import {bindEntitySet} from './middleware';
+import {getEntitySet} from './middleware';
+import {postEntitySet} from './middleware';
+import {deleteEntitySet} from './middleware';
+import {getEntity} from './middleware';
+import {postEntity} from './middleware';
+import {deleteEntity} from './middleware';
+import {getEntityNavigationProperty} from './middleware';
+import {getEntitySetFunction} from './middleware';
+import {postEntitySetFunction} from './middleware';
+import {postEntitySetAction} from './middleware';
+import {getEntityFunction} from './middleware';
+import {postEntityAction} from './middleware';
 
 /**
  *
@@ -25,7 +25,6 @@ import {postEntityAction} from "./middleware";
  * @returns {Promise<Buffer>}
  */
 function readStream(stream) {
-    // eslint-disable-next-line no-undef
     return new Promise((resolve, reject) => {
         let buffers = [];
         stream.on('data', (d) => {

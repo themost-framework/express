@@ -1,9 +1,9 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
-import path from "path";
-import Symbol from "symbol";
-import {Args, ConfigurationBase, ApplicationService, IApplication} from "@themost/common";
-import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuilder, ODataModelBuilder} from "@themost/data";
-import {ServicesConfiguration} from "./configuration";
+import path from 'path';
+import Symbol from 'symbol';
+import {Args, ConfigurationBase, ApplicationService, IApplication} from '@themost/common';
+import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuilder, ODataModelBuilder} from '@themost/data';
+import {ServicesConfiguration} from './configuration';
 import {serviceRouter} from './service';
 import {BehaviorSubject} from 'rxjs';
 
@@ -65,10 +65,9 @@ class ExpressDataApplication extends IApplication {
      * @param {*} strategyCtor
      * @returns IApplication
      */
-    // eslint-disable-next-line no-unused-vars
     useStrategy(serviceCtor, strategyCtor) {
-        Args.notFunction(strategyCtor,"Service constructor");
-        Args.notFunction(strategyCtor,"Strategy constructor");
+        Args.notFunction(strategyCtor,'Service constructor');
+        Args.notFunction(strategyCtor,'Strategy constructor');
         this.services[serviceCtor.name] = new strategyCtor(this);
         return this;
     }
@@ -101,9 +100,8 @@ class ExpressDataApplication extends IApplication {
     * @param {*} serviceCtor
     * @returns {boolean}
     */
-    // eslint-disable-next-line no-unused-vars
     hasStrategy(serviceCtor) {
-        Args.notFunction(serviceCtor,"Service constructor");
+        Args.notFunction(serviceCtor,'Service constructor');
         return Object.prototype.hasOwnProperty.call(this.services, serviceCtor.name);
     }
 
@@ -112,9 +110,8 @@ class ExpressDataApplication extends IApplication {
      * @param {*} serviceCtor
      * @return {*}
      */
-    // eslint-disable-next-line no-unused-vars
     getStrategy(serviceCtor) {
-        Args.notFunction(serviceCtor,"Service constructor");
+        Args.notFunction(serviceCtor,'Service constructor');
         return this.services[serviceCtor.name];
     }
 
@@ -158,7 +155,6 @@ class ExpressDataApplication extends IApplication {
      * @param {*} serviceCtor
      * @returns *
      */
-    // eslint-disable-next-line no-unused-vars
     useService(serviceCtor) {
         return this.useStrategy(serviceCtor, serviceCtor);
     }
@@ -279,7 +275,7 @@ class ExpressDataApplication extends IApplication {
      */
     resolveUrl(appRelativeUrl) {
         if (/^~\//.test(appRelativeUrl)) {
-            let base = this.getConfiguration().getSourceAt("settings/app/base") || "/";
+            let base = this.getConfiguration().getSourceAt('settings/app/base') || '/';
             base += /\/$/.test(base) ? '' : '/';
             return appRelativeUrl.replace(/^~\//, base);
         }

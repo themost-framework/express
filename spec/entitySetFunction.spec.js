@@ -1,11 +1,12 @@
-import express from "express";
-import {ExpressDataApplication} from "./app";
-import path from "path";
-import {dateReviver} from "./helpers";
-import passport from "passport";
-import {serviceRouter} from "./service";
-import {TestPassportStrategy} from "./passport.spec";
-import request from "supertest";
+import express from 'express';
+import {ExpressDataApplication} from '@themost/express';
+import path from 'path';
+import {dateReviver} from '@themost/express';
+import passport from 'passport';
+import {serviceRouter} from '@themost/express';
+import {TestPassportStrategy} from './passport';
+import request from 'supertest';
+import { finalizeDataApplication } from './utils';
 
 describe('EntitySetFunction', () => {
     let app;
@@ -29,22 +30,33 @@ describe('EntitySetFunction', () => {
         app.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
     });
 
+    afterAll(async () => {
+        const dataApplication = app.get('ExpressDataApplication');
+        await finalizeDataApplication(dataApplication);
+    });
+
     it('should GET /api/users/me', async () => {
-        spyOn(passportStrategy, 'getUser').and.returnValue({
-            name: 'alexis.rees@example.com'
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
         });
         let response = await request(app)
             .get('/api/users/me')
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
-        expect(response.status).toBe(200);
+        expect(response.status).toEqual(200);
         expect(response.body).toBeTruthy();
         expect(response.body.name).toBe('alexis.rees@example.com');
     });
 
     it('should GET /api/users/active?name=?', async () => {
-        spyOn(passportStrategy, 'getUser').and.returnValue({
-            name: 'alexis.rees@example.com'
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
         });
         let response = await request(app)
             .get('/api/users/active')

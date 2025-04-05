@@ -1,0 +1,38 @@
+# IDE
+.idea
+.vscode
+.theia
+.DS_Store
+
+# dev
+node_modules
+
+# test
+spec
+coverage
+jest.config.js
+jest.setup.js
+
+# eslint
+.eslintignore
+.eslintrc
+eslint.config.mjs
+
+# build
+rollup.config.js
+babel.config.js
+jsconfig.json
+
+# gitpod
+.gitpod.yml
+.gitpod.dockerfile
+.devcontainer
+
+# github
+.github
+
+typescript
+tsconfig.json
+
+
+

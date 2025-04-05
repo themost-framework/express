@@ -1,11 +1,11 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
-import _ from "lodash";
+import _ from 'lodash';
 
-import Q from "q";
-import {ODataModelBuilder, EdmMapping, DataQueryable, EdmType} from "@themost/data";
+import Q from 'q';
+import {ODataModelBuilder, EdmMapping, DataQueryable, EdmType} from '@themost/data';
 import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError, TraceUtils} from '@themost/common';
-import { ResponseFormatter, StreamFormatter } from "./formatter";
-import {multerInstance} from "./multer";
+import { ResponseFormatter, StreamFormatter } from './formatter';
+import {multerInstance} from './multer';
 import fs from 'fs';
 
 const parseBoolean = LangUtils.parseBoolean;
@@ -494,7 +494,7 @@ function deleteEntity(options) {
             }
             // construct a native object
             const obj = {
-                "id": req.params[opts.from]
+                'id': req.params[opts.from]
             };
             //try to delete
             return thisModel.remove(obj).then(() => {
@@ -680,7 +680,7 @@ function getEntityNavigationProperty(options) {
                 //get associated model
                 const associatedModel = req.context.model(mapping.childModel);
                 if (_.isNil(associatedModel)) {
-                    return next(new HttpNotFoundError("Associated model not found"));
+                    return next(new HttpNotFoundError('Associated model not found'));
                 }
                 returnEntitySet = builder.getEntityTypeEntitySet(mapping.childModel);
                 return Q.nbind(associatedModel.filter, associatedModel)(_.extend({
@@ -710,7 +710,7 @@ function getEntityNavigationProperty(options) {
                 // get associated model
                 const parentModel = req.context.model(mapping.parentModel);
                 if (_.isNil(parentModel)) {
-                    return next(new HttpNotFoundError("Parent associated model not found"));
+                    return next(new HttpNotFoundError('Parent associated model not found'));
                 }
                 // init expand property
                 const navigationPropertyExpand = {
@@ -774,7 +774,7 @@ function getEntitySetFunction(options) {
 
         const model = req.context.model(req.entitySet.entityType.name);
         if (_.isNil(model)) {
-            return next(new HttpNotFoundError("Entity not found"));
+            return next(new HttpNotFoundError('Entity not found'));
         }
         const entitySetFunction = req.params[opts.entitySetFunctionFrom];
         const entityFunction = req.params[opts.entityFunctionFrom];
@@ -819,16 +819,17 @@ function getEntitySetFunction(options) {
                     }
                     const returnsCollection = _.isString(func.returnCollectionType);
                     let returnEntitySet;
+                    let returnModel;
                     if (result instanceof DataQueryable) {
                         // get return model (if any)
-                        var returnModel = req.context.model(func.returnType || func.returnCollectionType);
+                        returnModel = req.context.model(func.returnType || func.returnCollectionType);
                         // get return entity set
                         if (returnModel) {
                             returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
                         }
                         // throw exception for unknown model
                         if (_.isNil(returnModel)) {
-                            return Q.reject(new HttpNotFoundError("Result Entity not found"));
+                            return Q.reject(new HttpNotFoundError('Result Entity not found'));
                         }
                         const filter = Q.nbind(returnModel.filter, returnModel);
                         if (!returnsCollection) {
@@ -836,8 +837,8 @@ function getEntitySetFunction(options) {
                             let params = {};
                             if (_.isNil(navigationProperty) && _.isNil(entityFunction)) {
                                 params = _.pick(req.query, [
-                                    "$select",
-                                    "$expand"
+                                    '$select',
+                                    '$expand'
                                 ]);
                             }
                             return filter(params).then(q => {
@@ -955,7 +956,7 @@ function getEntitySetFunction(options) {
                         }
                     }
                     if (returnEntitySet == null) {
-                        return next(new HttpNotFoundError("Result EntitySet not found"));
+                        return next(new HttpNotFoundError('Result EntitySet not found'));
                     }
                     // throw error if result is empty
                     if (_.isNil(result)) {
@@ -1011,7 +1012,7 @@ function postEntitySetFunction(options) {
 
         const model = req.context.model(req.entitySet.entityType.name);
         if (_.isNil(model)) {
-            return next(new HttpNotFoundError("Entity not found"));
+            return next(new HttpNotFoundError('Entity not found'));
         }
         const entitySetFunction = req.params[opts.entitySetFunctionFrom];
         const entityAction = req.params[opts.entityActionFrom];
@@ -1053,7 +1054,7 @@ function postEntitySetFunction(options) {
                         returnModel = req.context.model(func.returnType || func.returnCollectionType);
                         // throw exception for unknown model
                         if (_.isNil(returnModel)) {
-                            return Q.reject(new HttpNotFoundError("Result Entity not found"));
+                            return Q.reject(new HttpNotFoundError('Result Entity not found'));
                         }
                         // get return entity set
                         returnEntitySet = builder.getEntityTypeEntitySet(returnModel.name);
@@ -1137,7 +1138,7 @@ function postEntitySetAction(options) {
         }
         const model = req.context.model(req.entitySet.entityType.name);
         if (_.isNil(model)) {
-            return next(new HttpNotFoundError("Entity not found"));
+            return next(new HttpNotFoundError('Entity not found'));
         }
         /**
          * get current model builder
@@ -1374,7 +1375,7 @@ function getEntityFunction(options) {
                                 returnModel = req.context.model(result.model.name);
                             }
                             if (returnModel == null) {
-                                return next(new HttpNotFoundError("Result Entity not found"));
+                                return next(new HttpNotFoundError('Result Entity not found'));
                             }
                         }
                         const filter = Q.nbind(returnModel.filter, returnModel);
@@ -1382,8 +1383,8 @@ function getEntityFunction(options) {
                         if (!returnsCollection) {
                             //pass context parameters (only $select and $expand)
                             const params = _.pick(req.query, [
-                                "$select",
-                                "$expand"
+                                '$select',
+                                '$expand'
                             ]);
                             //filter with parameters
                             return filter(params).then(q => {
@@ -1678,7 +1679,8 @@ function getMetadataDocument() {
         // get edm document
         return builder.getEdmDocument().then(result => {
             res.set('Content-Type', 'application/xml');
-            return res.send(result.outerXML());
+            res.set('OData-Version', '4.0');
+            return res.send('<?xml version="1.0" encoding="utf-8"?>' + result.outerXML());
         }).catch(err => {
             return next(err);
         });
