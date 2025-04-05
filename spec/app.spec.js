@@ -1,12 +1,13 @@
 
 import path from 'path';
-import {ExpressDataApplication, ApplicationServiceRouter} from './index';
+import {ExpressDataApplication, ApplicationServiceRouter} from '@themost/express';
 import request from 'supertest';
 import express from 'express';
 import {HttpNotFoundError, ApplicationService} from '@themost/common';
 import BearerStrategy from 'passport-http-bearer';
 import passport from 'passport';
-import {DefaultDataContext, ODataModelBuilder, DataConfigurationStrategy} from "@themost/data";
+import {DefaultDataContext, ODataModelBuilder, DataConfigurationStrategy} from '@themost/data';
+import { finalizeDataApplication } from './utils';
 /**
  * A passport strategy for testing purposes
  */
@@ -101,9 +102,14 @@ describe('ExpressDataApplication', () => {
         }
     });
 
+    afterAll(async () => {
+        await finalizeDataApplication(app.get(ExpressDataApplication.name));
+    });
+
     it('should use new ExpressDataApplication()', async ()=> {
         const dataApplication = new ExpressDataApplication();
         expect(dataApplication).toBeTruthy();
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataApplication.useStrategy()', async ()=> {
@@ -118,6 +124,7 @@ describe('ExpressDataApplication', () => {
         dataApplication.useStrategy(TestStrategy, DefaultTestStrategy);
         expect(dataApplication.hasStrategy(TestStrategy)).toBeTruthy();
         expect(dataApplication.getStrategy(TestStrategy)).toBeTruthy();
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataApplication.useService()', async ()=> {
@@ -129,18 +136,21 @@ describe('ExpressDataApplication', () => {
         dataApplication.useService(TestService);
         expect(dataApplication.hasService(TestService)).toBeTruthy();
         expect(dataApplication.getService(TestService)).toBeInstanceOf(TestService);
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataApplication.useModelBuilder()', async ()=> {
         const dataApplication = new ExpressDataApplication();
         dataApplication.useModelBuilder();
         expect(dataApplication.getBuilder()).toBeInstanceOf(ODataModelBuilder);
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataApplication.createContext()', async ()=> {
         const dataApplication = new ExpressDataApplication();
         const context = dataApplication.createContext();
         expect(context).toBeInstanceOf(DefaultDataContext);
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataContext.getStrategy()', async ()=> {
@@ -148,6 +158,7 @@ describe('ExpressDataApplication', () => {
         const context = dataApplication.createContext();
         expect(context).toBeInstanceOf(DefaultDataContext);
         expect(context.getStrategy(DataConfigurationStrategy)).toBeTruthy();
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataContext.engine()', async ()=> {
@@ -156,7 +167,8 @@ describe('ExpressDataApplication', () => {
         expect(context).toBeInstanceOf(DefaultDataContext);
         expect(() => {
             context.engine('.missing');
-        }).toThrowError();
+        }).toThrow();
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataApplication.execute()', async ()=> {
@@ -166,6 +178,7 @@ describe('ExpressDataApplication', () => {
         }, err => {
             expect(err).toBeFalsy();
         });
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use new ExpressDataApplication.getService(ApplicationServiceRouter)', async ()=> {
@@ -173,6 +186,7 @@ describe('ExpressDataApplication', () => {
         const service = dataApplication.getService(ApplicationServiceRouter);
         expect(service).toBeInstanceOf(ApplicationServiceRouter);
         expect(service.serviceRouter).toBeTruthy();
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should use Request.context', async ()=> {
@@ -241,10 +255,6 @@ describe('ExpressDataApplication', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.name).toBe('anonymous');
-        // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
-           name: 'alexis.rees@example.com'
-        });
         response = await request(app)
             .get('/api/users/me/')
             .set('Content-Type', 'application/json')

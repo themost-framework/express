@@ -1,10 +1,10 @@
 import express from "express";
-import {ExpressDataApplication} from "./app";
+import {ExpressDataApplication} from "@themost/express";
 import path from "path";
-import {dateReviver} from "./helpers";
+import {dateReviver} from "@themost/express";
 import passport from "passport";
-import {serviceRouter} from "./service";
-import {TestPassportStrategy} from "./passport.spec";
+import {serviceRouter} from "@themost/express";
+import {TestPassportStrategy} from "./passport";
 import request from "supertest";
 
 describe('EntitySetFunction', () => {

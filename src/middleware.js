@@ -1678,7 +1678,8 @@ function getMetadataDocument() {
         // get edm document
         return builder.getEdmDocument().then(result => {
             res.set('Content-Type', 'application/xml');
-            return res.send(result.outerXML());
+            res.set('OData-Version', '4.0');
+            return res.send('<?xml version="1.0" encoding="utf-8"?>' + result.outerXML());
         }).catch(err => {
             return next(err);
         });

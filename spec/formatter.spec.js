@@ -1,10 +1,10 @@
 import path from 'path';
-import {ExpressDataApplication} from './index';
+import {ExpressDataApplication} from '@themost/express';
 import request from 'supertest';
 import express from 'express';
 import passport from 'passport';
-import {TestPassportStrategy} from './passport.spec';
-import {JsonResponseFormatter, ResponseFormatter, XmlResponseFormatter} from './formatter';
+import {TestPassportStrategy} from './passport';
+import {JsonResponseFormatter, ResponseFormatter, XmlResponseFormatter} from '@themost/express';
 describe('ResponseFormatter', () => {
    
     /**

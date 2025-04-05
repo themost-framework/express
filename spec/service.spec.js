@@ -1,11 +1,11 @@
 import path from 'path';
-import {ApplicationServiceRouter, ExpressDataApplication} from './app';
+import {ApplicationServiceRouter, ExpressDataApplication} from '@themost/express';
 import request from 'supertest';
 import express from 'express';
 import BearerStrategy from 'passport-http-bearer';
 import passport from 'passport';
-import {serviceRouter, getServiceRouter} from './service';
-import {dateReviver} from './helpers';
+import {serviceRouter, getServiceRouter} from '@themost/express';
+import {dateReviver} from '@themost/express';
 import { ApplicationService } from '@themost/common';
 
 class ServiceRouterExtension extends ApplicationService {
