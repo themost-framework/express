@@ -5,6 +5,7 @@ import express from 'express';
 import passport from 'passport';
 import {TestPassportStrategy} from './passport';
 import {JsonResponseFormatter, ResponseFormatter, XmlResponseFormatter} from '@themost/express';
+import { finalizeDataApplication } from './utils';
 describe('ResponseFormatter', () => {
    
     /**
@@ -33,6 +34,11 @@ describe('ResponseFormatter', () => {
         // noinspection JSCheckFunctionSignatures
         app.use('/', passport.authenticate('bearer', { session: false }), testRouter);
         
+    });
+
+    afterAll(async () => {
+        const dataApplication = app.get('ExpressDataApplication');
+        await finalizeDataApplication(dataApplication);
     });
 
     it('should create instance', async () => {
@@ -90,7 +96,7 @@ describe('ResponseFormatter', () => {
             .set('Accept', 'application/xml');
         expect(response.status).toBe(200);
         expect(response.text).toBeTruthy();
-        expect(response.text).toBe(`<Object><message>hey</message></Object>`);
+        expect(response.text).toBe('<Object><message>hey</message></Object>');
     });
 
     it('should return 204 no content', async () => {

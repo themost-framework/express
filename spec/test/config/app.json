@@ -1,5 +1,5 @@
 {
-    "$schema": "../../../../../../docs/schemas/applicationConfiguration.json",
+    "$schema": "../../../docs/schemas/applicationConfiguration.json",
     "settings": {
         "crypto": {
             "algorithm": "aes256",
@@ -28,7 +28,7 @@
             "invariantName": "sqlite",
             "default": true,
             "options": {
-                "database": "modules/@themost/express/src/test/db/local.db"
+                "database": "spec/test/db/local.db"
             }
         }
     ]

@@ -7,6 +7,7 @@ import passport from 'passport';
 import {serviceRouter, getServiceRouter} from '@themost/express';
 import {dateReviver} from '@themost/express';
 import { ApplicationService } from '@themost/common';
+import { finalizeDataApplication } from './utils';
 
 class ServiceRouterExtension extends ApplicationService {
     constructor(app) {
@@ -88,9 +89,13 @@ describe('serviceRouter', () => {
         //
     });
 
+    afterAll(async () => {
+        await finalizeDataApplication(app.get(ExpressDataApplication.name));
+    });
+
     it('should GET /api/users/', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -112,7 +117,7 @@ describe('serviceRouter', () => {
             return next();
         });
         router.stack.unshift(...addRoute.stack);
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -135,7 +140,7 @@ describe('serviceRouter', () => {
             return next();
         });
         router.stack.unshift(...addRoute.stack);
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -144,7 +149,7 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toEqual(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         expect(response.body.value.length).toEqual(10);
 
         response = await request(app)
@@ -162,7 +167,7 @@ describe('serviceRouter', () => {
 
     it('should use an entity set function', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -176,7 +181,7 @@ describe('serviceRouter', () => {
 
     it('should get items with paging', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -189,7 +194,7 @@ describe('serviceRouter', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.value).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         expect(response.body.value.length).toBe(10);
         response = await request(app)
             .get('/api/products/')
@@ -201,7 +206,7 @@ describe('serviceRouter', () => {
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         expect(response.body['@odata.count']).toBeGreaterThan(10);
         expect(response.body['@odata.skip']).toBe(10);
         expect(response.body.value.length).toBe(10);
@@ -209,7 +214,7 @@ describe('serviceRouter', () => {
 
     it('should use select query', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -221,7 +226,7 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         response.body.value.forEach( x => {
             const keys = Object.keys(x);
             expect(keys).toContain('name');
@@ -237,7 +242,7 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         response.body.value.forEach( x => {
             const keys = Object.keys(x);
             expect(keys).toContain('productModel');
@@ -246,22 +251,25 @@ describe('serviceRouter', () => {
 
     it('should use order by query', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
             .get('/api/products/')
             .query({
-                $orderby: 'name asc'
+                $orderby: 'name asc',
+                $top: 5
             })
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         response.body.value.forEach( (x, i) => {
             if (i > 0) {
-                expect(x.name).toBeGreaterThanOrEqual(response.body.value[i-1].name);
+                const {name} = x;
+                const previous = response.body.value[i-1].name;
+                expect(name > previous).toBeTruthy();
             }
         });
 
@@ -274,7 +282,7 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response1.status).toBe(200);
         expect(response1.body).toBeTruthy();
-        expect(response1.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response1.body.value)).toBeTruthy();
         response1.body.value.forEach( (x, i) => {
             if (i > 0) {
                 // noinspection JSUnresolvedVariable
@@ -285,7 +293,7 @@ describe('serviceRouter', () => {
 
     it('should use group by query', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -298,7 +306,7 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         response.body.value.forEach( x => {
             const keys = Object.keys(x);
             expect(keys).toContain('category');
@@ -309,14 +317,14 @@ describe('serviceRouter', () => {
 
     it('should save a new product', async () => {
         const newProduct = {
-            "category": "Laptops",
-            "price": 1099,
-            "model": "MQD32GR",
-            "releaseDate": "2019-04-15 12:15:00.000+02:00",
-            "name": "Apple MacBook Air 13 8GB/128GB",
+            'category': 'Laptops',
+            'price': 1099,
+            'model': 'MQD32GR',
+            'releaseDate': '2019-04-15 12:15:00.000+02:00',
+            'name': 'Apple MacBook Air 13 8GB/128GB',
         };
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -361,19 +369,19 @@ describe('serviceRouter', () => {
 
     it('should get navigation property', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
             .get('/api/people/')
             .query({
-                $filter: `description eq 'Collin Jenkins'`
+                $filter: 'description eq \'Collin Jenkins\''
             })
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         expect(response.body.value.length).toBe(1);
         const person = response.body.value[0];
         response = await request(app)
@@ -382,7 +390,7 @@ describe('serviceRouter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
         response.body.value.forEach( x => {
             expect(x.additionalType).toBe('Order');
             expect(x).toBeTruthy();
@@ -390,19 +398,19 @@ describe('serviceRouter', () => {
     });
     it('should query products with text', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
             .get('/api/products/')
             .query({
-                $search: `"Retina Display"`
+                $search: '"Retina Display"'
             })
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body.value).toBeInstanceOf(Array);
+        expect(Array.isArray(response.body.value)).toBeTruthy();
     });
 
     it('should insert one route', async ()=> {
@@ -499,7 +507,7 @@ describe('serviceRouter', () => {
 
         // finally get user
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         response = await request(app)
@@ -532,7 +540,7 @@ describe('serviceRouter', () => {
         app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
 
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app1)
@@ -542,6 +550,7 @@ describe('serviceRouter', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.status).toBe('ok');
+        await finalizeDataApplication(application);
 
     });
 
@@ -564,7 +573,7 @@ describe('serviceRouter', () => {
         app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
 
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app1)
@@ -581,6 +590,7 @@ describe('serviceRouter', () => {
         expect(response.type).toBe('application/octet-stream');
         expect(response.body).toBeInstanceOf(Buffer);
         expect(response.get('content-location')).toBe('/another/avatar/location');
+        await finalizeDataApplication(application);
 
     });
 
@@ -601,7 +611,7 @@ describe('serviceRouter', () => {
         // set service router
         app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
 
@@ -618,6 +628,7 @@ describe('serviceRouter', () => {
             .field('alternateName', 'testing')
             .field('published', true)
         expect(response.status).toBe(400);
+        await finalizeDataApplication(application);
 
     });
 
@@ -638,7 +649,7 @@ describe('serviceRouter', () => {
         // set service router
         app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
 
@@ -668,6 +679,7 @@ describe('serviceRouter', () => {
             .field('published', true)
             .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
         expect(response.status).toBe(200);
+        await finalizeDataApplication(application);
 
     });
 
@@ -688,7 +700,7 @@ describe('serviceRouter', () => {
         // set service router
         app1.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
 
@@ -699,12 +711,13 @@ describe('serviceRouter', () => {
             .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
         expect(response.status).toBe(200);
         expect(response.body.dateCreated).toBeTruthy();
+        finalizeDataApplication(application);
     });
 
 
     it('should use an entity function and return no content', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -722,7 +735,7 @@ describe('serviceRouter', () => {
 
     it('should use an entity action and return no content', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
@@ -747,7 +760,7 @@ describe('serviceRouter', () => {
 
     it('should use an entity function and return queryable no content', async () => {
         // change user
-        spyOn(passportStrategy, 'getUser').and.returnValue({
+        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)

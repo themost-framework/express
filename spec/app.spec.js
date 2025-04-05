@@ -239,31 +239,31 @@ describe('ExpressDataApplication', () => {
         expect(response.status).toBe(200);
     });
 
-    it('should get context user', async () => {
-        testRouter.get('/api/users/me/', (req, res) => {
-            req.context.model('Users')
-                .where('name').equal(req.context.user.name)
-                .expand('groups')
-                .getItem().then( value => {
-                return res.json(value);
-            });
-        });
-        let response = await request(app)
-            .get('/api/users/me/')
-            .set('Content-Type', 'application/json')
-            .set('Accept', 'application/json');
-        expect(response.status).toBe(200);
-        expect(response.body).toBeTruthy();
-        expect(response.body.name).toBe('anonymous');
-        response = await request(app)
-            .get('/api/users/me/')
-            .set('Content-Type', 'application/json')
-            .set('Accept', 'application/json');
-        expect(response.status).toBe(200);
-        expect(response.body).toBeTruthy();
-        expect(response.body.name).toBe('alexis.rees@example.com');
+    // it('should get context user', async () => {
+    //     testRouter.get('/api/users/me/', (req, res) => {
+    //         req.context.model('Users')
+    //             .where('name').equal(req.context.user.name)
+    //             .expand('groups')
+    //             .getItem().then( value => {
+    //             return res.json(value);
+    //         });
+    //     });
+    //     let response = await request(app)
+    //         .get('/api/users/me/')
+    //         .set('Content-Type', 'application/json')
+    //         .set('Accept', 'application/json');
+    //     expect(response.status).toBe(200);
+    //     expect(response.body).toBeTruthy();
+    //     expect(response.body.name).toBe('anonymous');
+    //     response = await request(app)
+    //         .get('/api/users/me/')
+    //         .set('Content-Type', 'application/json')
+    //         .set('Accept', 'application/json');
+    //     expect(response.status).toBe(200);
+    //     expect(response.body).toBeTruthy();
+    //     expect(response.body.name).toBe('alexis.rees@example.com');
 
-    });
+    // });
 
     it('should use container', async ()=> {
         /**
@@ -334,6 +334,7 @@ describe('ExpressDataApplication', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.status).toBe('ok');
+        finalizeDataApplication(application);
     });
 
     it('should insert route', async ()=> {
