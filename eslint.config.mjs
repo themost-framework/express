@@ -15,7 +15,7 @@ const compat = new FlatCompat({
     allConfig: js.configs.all
 });
 
-export default defineConfig([globalIgnores(['**/*.d.ts', 'modules/test/dist']), {
+export default defineConfig([globalIgnores(['**/*.d.ts', 'dist']), {
     extends: compat.extends('eslint:recommended'),
     languageOptions: {
         globals: {

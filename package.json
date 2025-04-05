@@ -10,10 +10,10 @@
     "build": "rimraf dist && rollup -c rollup.config.js -m",
     "watch": "rimraf dist && rollup -c rollup.config.js -m -w",
     "test": "jest",
-    "lint": "eslint modules/@themost/express"
+    "lint": "eslint src"
   },
   "engines": {
-    "node": ">=6.9.4"
+    "node": ">=14.21.3"
   },
   "repository": {
     "type": "git",
@@ -38,17 +38,18 @@
     "@themost/common": "^2",
     "@themost/data": "^2",
     "@themost/query": "^2",
-    "@themost/xml": "^2"
+    "@themost/xml": "^2",
+    "express": "^4.21.2"
   },
   "dependencies": {
-    "express": "^4.21.2",
     "lodash": "^4.17.11",
     "multer": "^1.4.5-lts.1",
     "on-headers": "^1.0.2",
     "pluralize": "^7.0.0",
     "q": "^1.5.1",
     "rxjs": "^6.5.4",
-    "symbol": "^0.3.1"
+    "symbol": "^0.3.1",
+    "express": "^4.21.2"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",
