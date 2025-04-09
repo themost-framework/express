@@ -3,7 +3,7 @@ import _ from 'lodash';
 
 import Q from 'q';
 import {ODataModelBuilder, EdmMapping, DataQueryable, EdmType} from '@themost/data';
-import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError, TraceUtils} from '@themost/common';
+import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedError, TraceUtils, HttpServerError} from '@themost/common';
 import { ResponseFormatter, StreamFormatter } from './formatter';
 import {multerInstance} from './multer';
 import fs from 'fs';
@@ -1640,26 +1640,43 @@ function postEntityAction(options) {
 }
 
 /**
- * @returns {Function}
+ * @returns {import('express').RequestHandler}
+ * @throws {HttpServerError}
  */
 function getEntitySetIndex() {
     return (req, res, next) => {
-        if (typeof req.context === 'undefined') {
-            return next();
-        }
-        /**
-         * get current model builder
-         * @type {ODataModelBuilder|*}
-         */
-        const builder = req.context.getApplication().getStrategy(ODataModelBuilder);
-        // get edm document
-        return builder.getEdm().then(result => {
-            return res.json({
-                value: result.entityContainer.entitySet
+        try {
+            if (req.context == null) {
+                throw new HttpServerError('Invalid request state. Request context is undefined.');
+            }
+            // get service root
+            let serviceRoot = req.context.application.getConfiguration().getSourceAt('settings/builder/serviceRoot');
+            if (serviceRoot == null) {
+                // try to get service root from request
+                const host = req.get('x-forwarded-host') || req.get('host');
+                const protocol = req.get('x-forwarded-proto') || req.protocol;
+                serviceRoot = new URL(req.path, `${protocol}://${host}`).toString();
+            }
+            /**
+             * get current model builder
+             * @type {ODataModelBuilder}
+             */
+            const builder = req.context.getApplication().getStrategy(ODataModelBuilder);
+            if (builder == null) {
+                throw new HttpServerError('Invalid request state. Model builder is undefined.');
+            }
+            // get edm document
+            return builder.getEdm().then(result => {
+                return tryFormat({
+                    value: result.entityContainer.entitySet
+                }, req, res);
+            }).catch(err => {
+                return next(err);
             });
-        }).catch(err => {
+        } catch(err) {
             return next(err);
-        });
+        }
+        
     };
 }
 
