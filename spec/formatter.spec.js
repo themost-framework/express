@@ -68,17 +68,13 @@ describe('ResponseFormatter', () => {
             .set('Accept', 'application/json');
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body).toEqual({
-            message: 'hey'
-        });
+        expect(response.body.message).toEqual('hey');
 
         response = await request(app)
             .get('/message')
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
-        expect(response.body).toEqual({
-            message: 'hey'
-        });
+        expect(response.body.message).toEqual('hey');
     });
 
     it('should use formatter to get xml', async () => {

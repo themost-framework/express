@@ -101,7 +101,7 @@ class AppendContextAttribute extends AppendAttribute  {
                     if (entitySetActionReturnSet) {
                         metadataUrl.hash = `${entitySetActionReturnSet.name}`; // e.g. $metadata#People
                     } else {
-                        metadataUrl.hash = `${entitySetFunction.returnCollectionType}`; // e.g. $metadata#String
+                        metadataUrl.hash = `Collection(${entitySetFunction.returnCollectionType})`; // e.g. $metadata#Collection(String)
                     }
                 }
             }
@@ -140,7 +140,7 @@ class AppendContextAttribute extends AppendAttribute  {
                     if (entitySetActionReturnSet) {
                         metadataUrl.hash = `${entitySetActionReturnSet.name}`; // e.g. $metadata#People
                     } else {
-                        metadataUrl.hash = `${entitySetAction.returnCollectionType}`; // e.g. $metadata#String
+                        metadataUrl.hash = `Collection(${entitySetAction.returnCollectionType})`; // e.g. $metadata#Collection(String)
                     }
                 }
             }
