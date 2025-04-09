@@ -38,6 +38,11 @@ class AppendContextAttribute extends AppendAttribute  {
          * @type {import('./app').ExpressDataContext}
          */
         const context = req.context;
+        // if entity set is not defined
+        if (req.entitySet == null) {
+            // do nothing and exit
+            return {};
+        }
         // add odata attributes
         // @odata.context
         let serviceRoot = context.getConfiguration().getSourceAt('settings/builder/serviceRoot');
