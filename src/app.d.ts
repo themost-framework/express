@@ -2,9 +2,43 @@
 // tslint:disable-next-line:ordered-imports
 import {ConfigurationBase, IApplicationService, ApplicationBase} from '@themost/common';
 import {ApplicationServiceConstructor} from '@themost/common/app';
-import {DefaultDataContext, ODataModelBuilder} from '@themost/data';
+import {DataAdapterConstructor, DefaultDataContext, ODataModelBuilder} from '@themost/data';
 import {Application, RequestHandler, Router} from 'express';
 import {BehaviorSubject} from 'rxjs';
+
+export declare interface ApplicationConfiguration {
+    [key: string]: unknown;
+    services?: { serviceType: string; strategyType?: string }[];
+    settings?: {
+        [key: string]: unknown,
+        crypto?: {
+            algorithm: string,
+            key: string,
+        },
+        auth?: {
+            [key: string]: unknown,
+            unattendedExecutionAccount?: string;
+        },
+        schema?: {
+            loaders?: { loaderType: string;}[];
+        },
+        i18n?: {
+            defaultLocale: string;
+            locales: string[];
+        }
+    }
+    adapterTypes?: {
+        name: string;
+        invariantName: string;
+        type: string | DataAdapterConstructor<any>;
+    }[];
+    adapters?: {
+        name: string;
+        invariantName: string;
+        default?: boolean;
+        options: unknown;
+    }[];
+}
 
 export declare class ApplicationServiceRouter implements IApplicationService {
     public serviceRouter: Router;
