@@ -8,6 +8,7 @@ import {serviceRouter, getServiceRouter} from '@themost/express';
 import {dateReviver} from '@themost/express';
 import { ApplicationService } from '@themost/common';
 import { finalizeDataApplication } from './utils';
+import { DataConfigurationStrategy } from '@themost/data';
 
 class ServiceRouterExtension extends ApplicationService {
     constructor(app) {
@@ -72,6 +73,12 @@ describe('serviceRouter', () => {
         app = express();
         // create a new instance of data application
         const dataApplication = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+        const dataConfiguration = dataApplication.getConfiguration().getStrategy(DataConfigurationStrategy);
+        // change sqlite database path
+        const adapter = dataConfiguration.adapters.find((adapter) => adapter.default);
+        if (adapter.invariantName === 'sqlite') {
+            adapter.options.database = path.resolve(__dirname, 'test/db/local.db');
+        }
         app.use(express.json({
             reviver: dateReviver
         }));

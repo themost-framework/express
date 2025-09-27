@@ -1,7 +1,51 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
-import {AbstractMethodError, ApplicationService} from '@themost/common';
+import {AbstractMethodError, ApplicationService, HttpBadRequestError, HttpServerError} from '@themost/common';
+import { ODataModelBuilder } from '@themost/data';
 import {XSerializer} from '@themost/xml';
 import {Readable} from 'stream';
+import { AppendContextAttribute } from './attribute';
+
+const MimeTypeRegex = '([a-zA-Z*]+)\\/([a-zA-Z0-9\\-*.+]+)';
+const MimeTypeParamRegex = '^([a-zA-Z0-9\\-._+]+)="?([a-zA-Z0-9\\-._+]+)"?$';
+
+/**
+ * 
+ * @param {string} format 
+ * @returns {Map<string,{type: string,subType:string,params:Map<string,string>}>}
+ */
+function parseFormatParam(format) {
+    const results = new Map();
+    if (format == null) {
+        return results;
+    }
+    if (format.length === 0) {
+        return results;
+    }
+    const parts = format.split(',');
+    return parts.reduce((parts, part) => {
+        const tokens = part.trim().split(';');
+        const mimeType = tokens.shift();
+        const matches = new RegExp(MimeTypeRegex, 'g').exec(mimeType);
+        if (matches) {
+            const [,type, subType] = matches;
+            const params = tokens.reduce((previous, current) => {
+                const paramMatches = new RegExp(MimeTypeParamRegex, 'g').exec(current);
+                if (paramMatches) {
+                    const [,name, value] = paramMatches;
+                    previous.set(name, value);   
+                }
+                return previous;
+            }, new Map());
+            parts.set(mimeType, {
+                type,
+                subType,
+                params
+            });
+            return parts
+        }
+    }, results);
+}
+
 
 class HttpResponseFormatter {
     /**
@@ -44,6 +88,7 @@ class XmlResponseFormatter extends HttpResponseFormatter {
     }
 }
 
+
 class JsonResponseFormatter extends HttpResponseFormatter {
     /**
      * 
@@ -51,13 +96,47 @@ class JsonResponseFormatter extends HttpResponseFormatter {
      * @param {Response} res
      */
     execute(req, res) {
+        // get $format query parameter or accept header
+        const formatParam = req.query.$format || req.get('accept');
+        // get formats
+        const formats = parseFormatParam(formatParam);
+        // get application/json mime type
+        const mimeType = formats.get('application/json');
+        // get odata.metadata parameter (the default is minimal)
+        let metadata = 'minimal';
+        if (mimeType && mimeType.params.has('odata.metadata')) {
+            metadata = mimeType.params.get('odata.metadata');
+        }
+        /**
+         * @type {import('./app').ExpressDataContext}
+         */
+        const context = req.context;
+        if (context == null) {
+            throw new HttpServerError('Missing context', 'Request context cannot be empty.');
+        }
+        const builder = context.application.getStrategy(ODataModelBuilder);
+        if (builder == null) {
+            throw new HttpServerError('Missing model builder', 'ODataModelBuilder service has not been initialized.');
+        }
         // if data is empty
         if (this.data == null) {
             // return no content
             return res.status(204).type('application/json').send();
         }
-        res.json(this.data);
+        res.setHeader('OData-Version', '4.0');
+        const extraAttributes = {};
+        if (metadata !== 'none') {
+            Object.assign(extraAttributes, new AppendContextAttribute().append(req, res));
+        }
+        if (Array.isArray(this.data)) {
+            return res.json(Object.assign(extraAttributes, {
+                value: this.data
+            }));
+        }
+        res.json(Object.assign(extraAttributes, this.data));
+        
     }
+
 }
 
 class ResponseFormatterWrapper {
