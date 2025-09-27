@@ -1,6 +1,6 @@
 {
   "name": "@themost/express",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "@themost-framework express.js middleware",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
