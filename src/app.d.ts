@@ -56,7 +56,7 @@ export declare class ExpressDataApplication implements ApplicationBase, CreateAp
 
     public readonly serviceRouter: BehaviorSubject<Router>;
 
-    constructor(configurationPath?: string);
+    constructor(configPathOrSource?: string | unknown);
 
     configuration: ConfigurationBase;
 
