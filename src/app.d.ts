@@ -1,6 +1,7 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
 // tslint:disable-next-line:ordered-imports
 import {ConfigurationBase, IApplicationService, ApplicationBase} from '@themost/common';
+import {ApplicationServiceConstructor} from '@themost/common/app';
 import {DefaultDataContext, ODataModelBuilder} from '@themost/data';
 import {Application, RequestHandler, Router} from 'express';
 import {BehaviorSubject} from 'rxjs';
@@ -11,7 +12,11 @@ export declare class ApplicationServiceRouter implements IApplicationService {
     public getApplication(): ApplicationBase;
 }
 
-export declare class ExpressDataApplication {
+export declare interface CreateApplicationContext {
+    createContext(): ExpressDataContext;
+}
+
+export declare class ExpressDataApplication implements ApplicationBase, CreateApplicationContext {
 
     public readonly container: BehaviorSubject<Application>;
 
@@ -19,25 +24,29 @@ export declare class ExpressDataApplication {
 
     constructor(configurationPath?: string);
 
+    configuration: ConfigurationBase;
+
+    useStrategy(serviceCtor: ApplicationServiceConstructor<any>, strategyCtor: ApplicationServiceConstructor<any>): this;
+
+    useService(serviceCtor: ApplicationServiceConstructor<any>): this;
+
     public useModelBuilder(): ODataModelBuilder;
 
     public getBuilder(): ODataModelBuilder;
 
-    public useStrategy(serviceCtor: void, strategyCtor: void): this;
+    public hasStrategy<T>(serviceCtor: ApplicationServiceConstructor<T>): boolean;
 
-    public useService(serviceCtor: void): this;
+    public hasService<T>(serviceCtor: ApplicationServiceConstructor<T>): boolean;
 
-    public hasStrategy<T>(serviceCtor: new() => T): boolean;
+    public getStrategy<T>(serviceCtor: ApplicationServiceConstructor<T>): T;
 
-    public hasService<T>(serviceCtor: new() => T): boolean;
+    hasService<T>(serviceCtor: ApplicationServiceConstructor<T>): boolean;
 
-    public getStrategy<T>(serviceCtor: new() => T): T;
-
-    public getService<T>(serviceCtor: new() => T): T;
+    getService<T>(serviceCtor: ApplicationServiceConstructor<T>): T;
 
     public createContext(): ExpressDataContext;
 
-    public execute(callable: void, callback: void);
+    public execute(callable: void, callback: void): void;
 
     public getConfiguration(): ConfigurationBase;
 
@@ -93,7 +102,7 @@ export declare class ExpressDataContext extends DefaultDataContext {
 
     public getStrategy<T>(serviceCtor: new() => T): T;
 
-    public engine(extension): any;
+    public engine(extension: string): any;
 }
 
 declare global {
@@ -107,5 +116,11 @@ declare global {
 declare module '@themost/common' {
     interface DataAdapterBase {
         dispose(): void;
+    }
+}
+
+declare module '@themost/data' {
+    interface ODataConventionModelBuilder {
+        initializeSync(): void;
     }
 }

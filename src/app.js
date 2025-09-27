@@ -1,5 +1,3 @@
-// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
-import path from 'path';
 import Symbol from 'symbol';
 import {Args, ConfigurationBase, ApplicationService, IApplication} from '@themost/common';
 import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuilder, ODataModelBuilder} from '@themost/data';
@@ -31,10 +29,10 @@ class ApplicationServiceRouter extends ApplicationService {
 
 /**
  * @class
- * @param {string=} configurationPath - The configuration directory path
+ * @param {string=} configPathOrSource - The configuration directory path
  */
 class ExpressDataApplication extends IApplication {
-    constructor(configurationPath) {
+    constructor(configPathOrSource) {
         super();
         // add container property as behavior subject
         this.container = new BehaviorSubject(null);
@@ -45,7 +43,7 @@ class ExpressDataApplication extends IApplication {
             writable: false 
         });
         // initialize @themost/data configuration
-        this[configurationProperty] = new ConfigurationBase(path.resolve(process.cwd(), configurationPath || 'config'));
+        this[configurationProperty] = new ConfigurationBase(configPathOrSource);
         // use default data configuration strategy
         this[configurationProperty].useStrategy(DataConfigurationStrategy, DataConfigurationStrategy);
         // use default model builder
@@ -56,6 +54,14 @@ class ExpressDataApplication extends IApplication {
         this.serviceRouter = new BehaviorSubject(serviceRouter);
         // register configuration services
         ServicesConfiguration.config(this);
+
+        Object.defineProperty(this, 'configuration', {
+            enumerable: false,
+            configurable: false,
+            get: () => {
+                return this.getConfiguration();
+            }
+        });
 
     }
 
@@ -172,8 +178,8 @@ class ExpressDataApplication extends IApplication {
      */
 
     /**
-     * Creates an new context and executes the given callable. Use this method to execute a function 
-     * as a service by initializing a data context outside of an HTTP request
+     * Creates a new context and executes the given callable. Use this method to execute a function
+     * as a service by initializing a data context outside an HTTP request
      * @param {ExpressDataApplication~executeCallable} callable A callable function to execute
      * @param {ExpressDataApplication~executeCallback} callback A callback function for finalizing data context
      */
@@ -275,6 +281,9 @@ class ExpressDataApplication extends IApplication {
      */
     resolveUrl(appRelativeUrl) {
         if (/^~\//.test(appRelativeUrl)) {
+            /**
+             * @type {string}
+             */
             let base = this.getConfiguration().getSourceAt('settings/app/base') || '/';
             base += /\/$/.test(base) ? '' : '/';
             return appRelativeUrl.replace(/^~\//, base);
@@ -354,7 +363,10 @@ class ExpressDataContext extends DefaultDataContext {
                 return callback(err);
             }
         }
-        // get unattended execution account
+        /**
+         *  get unattended execution account
+         * @type {string}
+         */
         const account = self.getConfiguration().getSourceAt('settings/auth/unattendedExecutionAccount');
         // get interactive user
         if (self.user) {

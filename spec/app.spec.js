@@ -74,7 +74,7 @@ describe('ExpressDataApplication', () => {
     let app;
     /**
      * A router for testing
-     * @type {Router}
+     * @type {import('express').Router}
      */
     let testRouter = express.Router();
 
@@ -334,7 +334,7 @@ describe('ExpressDataApplication', () => {
         expect(response.status).toBe(200);
         expect(response.body).toBeTruthy();
         expect(response.body.status).toBe('ok');
-        finalizeDataApplication(application);
+        await finalizeDataApplication(application);
     });
 
     it('should insert route', async ()=> {
@@ -422,6 +422,21 @@ describe('ExpressDataApplication', () => {
         expect(response.body).toBeTruthy();
         expect(response.body.message).toBe('c');
 
+    });
+
+    it('should use constructor with configuration', async ()=> {
+        const app = new ExpressDataApplication({
+            'settings': {
+                'oneService': {
+                    'option': true
+                }
+            }
+        });
+        const value = app.configuration.getSourceAt('settings/oneService/option');
+        expect(value).toBeTruthy();
+        expect(app.getConfiguration().getConfigurationPath()).toBe(path.resolve(process.cwd(), 'config'));
+        expect(app.getConfiguration().getExecutionPath()).toBe(path.resolve(process.cwd()));
+        await finalizeDataApplication(app);
     });
 
 });
