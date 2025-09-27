@@ -7,5 +7,5 @@ export declare interface ServiceConfigurationElement {
 }
 
 export declare class ServicesConfiguration {
-    public config(app: ExpressDataApplication): void;
+    public static config(app: ExpressDataApplication): void;
 }
