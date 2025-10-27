@@ -18,6 +18,7 @@ import {postEntitySetFunction} from './middleware';
 import {postEntitySetAction} from './middleware';
 import {getEntityFunction} from './middleware';
 import {postEntityAction} from './middleware';
+import {batch} from './batch';
 
 /**
  *
@@ -89,6 +90,8 @@ serviceRouter.post('/:entitySet/:id', bindEntitySet(), postEntity());
 
 /* DELETE /:entitySet/:id deletes a data object by id. */
 serviceRouter.delete('/:entitySet/:id', bindEntitySet(), deleteEntity());
+
+serviceRouter.post('/\\$batch', batch(serviceRouter));
 
 Object.defineProperty(serviceRouter, 'alternateName', {
     configurable: true,
