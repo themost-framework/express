@@ -1159,14 +1159,6 @@ function postEntitySetAction(options) {
             const parameters = _.filter(action.parameters, x => {
                 return x.name !== 'bindingParameter';
             });
-            // if parameters must be included in body
-            if (parameters.length) {
-                // validate request body
-                if (typeof req.body === 'undefined') {
-                    // throw bad request if body is missing
-                    return next(new HttpBadRequestError('Request body cannot be empty'));
-                }
-            }
             // add context as the first parameter
             actionParameters.push(req.context);
             const multerOptions = req.context.getApplication().getConfiguration().getSourceAt('settings/multer');
