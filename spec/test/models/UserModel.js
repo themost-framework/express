@@ -71,7 +71,7 @@ class User extends DataObject {
      * @returns {{dateCreated: Date}}
      */
     @EdmMapping.param('attributes', 'Object', true, true)
-    @EdmMapping.param('file', EdmType.EdmStream, false)
+    @EdmMapping.param('file', EdmType.EdmStream, true)
     @EdmMapping.action('uploadTestAvatar', 'Object')
     static async uploadTestAvatar(context, file, attributes) {
         // eslint-disable-next-line no-unused-vars
