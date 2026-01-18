@@ -38,7 +38,8 @@
     "@themost/common": "^2.12.0",
     "@themost/data": "^2",
     "@themost/query": "^2",
-    "@themost/xml": "^2"
+    "@themost/xml": "^2",
+    "express": "^5.2.1"
   },
   "dependencies": {
     "lodash": "^4.17.11",
