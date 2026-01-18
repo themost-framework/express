@@ -14,6 +14,17 @@
 
     npm i @themost/express
 
+### Compatibility
+
+Here is the version compatibility list:
+
+| @themost/express| Express.js      |
+|-----------------|-----------------|
+| 2.x.x           | 4.x.x           |
+| 5.x.x           | 5.x.x           |
+
+e.g. `npm i @themost/express@lts-4` for `express.js@4` or `npm i @themost/express@latest` for `express.js@5`
+
 ### Generate new project
 
 Install @themost/cli globally
