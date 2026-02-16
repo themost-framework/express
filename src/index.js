@@ -6,3 +6,4 @@ export * from './helpers';
 export * from './service';
 export * from './formatter';
 export * from './context';
+export * from './batch';
