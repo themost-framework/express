@@ -1,4 +1,4 @@
-import {HttpNotAcceptableError, HttpNotFoundError} from '@themost/common';
+import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils} from '@themost/common';
 import {URL} from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
 import {Router} from 'express';
@@ -94,15 +94,19 @@ function batch(routerOrApplication, options) {
 
     batchRouter.use(function batchInit(req, res, next) {
         // noinspection JSUnresolvedReference
-        if (res.batchRequest) {
+        if (req.batchReq) {
             // override res.send and res.json to capture the response from the batch request
             res.json = function (body) {
                 res.body = body;
-                //res.batchRequest.finish.next(res);
                 res.emit('batch.data', res);
             };
             res.on('error', function (err) {
                 res.emit('batch.error', err);
+            });
+            res.on('finish', function () {
+               TraceUtils.debug(
+                     `Batch request [${req.batchReq.id}] ${req.batchReq.method} ${req.batchReq.url} ${res.statusCode}`
+               )
             });
         }
         return next();
@@ -146,35 +150,54 @@ function batch(routerOrApplication, options) {
                             },
                             configurable: true
                         });
-                        // create a new response object for the batch request
-                        const childRes = new BatchServerResponse(childReq);
-                        // listen for the response data event to capture the response from the batch request
-                        Object.defineProperty(childRes, 'batchRequest', {
+                        Object.defineProperty(childReq, 'batchReq', {
                             get() {
                                 return batchRequest;
                             },
                             configurable: true
                         });
+                        // create a new response object for the batch request
+                        const childRes = new BatchServerResponse(childReq);
                         // add events to capture the response from the batch request
-                        childRes.on('batch.data', function (response) {
-                            results.push({
-                                id: batchRequest.id,
-                                status: response.statusCode,
-                                headers: response.headers,
-                                body: response.body
-                            });
-                            index++;
-                            response.end();
-                            executeNext();
+                        childRes.on(
+                            'batch.data',
+                            /**
+                             * @this {ServerResponse}
+                             * @param response
+                             */
+                            function (response) {
+                                results.push({
+                                    id: batchRequest.id,
+                                    status: response.statusCode,
+                                    headers: response.headers,
+                                    body: response.body
+                                });
+                                index++;
+                                this.end();
+                                this.emit('finish');
+                                executeNext();
                         });
-                        childRes.on('batch.error', function (error) {
-                            results.push({
-                                id: batchRequest.id,
-                                status: error.status || 500,
-                                body: error
-                            });
-                            index++;
-                            executeNext();
+                        childRes.on(
+                            'batch.error',
+                            /**
+                             * @this {ServerResponse}
+                             * @param {*} error
+                             */
+                            function (error) {
+                                const errorResult = {
+                                    id: batchRequest.id,
+                                    status: error.status || error.statusCode || 500,
+                                    body: error
+                                };
+                                // if the error has a constructor name, include it in the response body
+                                if (error.constructor && error.constructor.name) {
+                                    errorResult.body.name = error.constructor && error.constructor.name;
+                                }
+                                results.push(errorResult);
+                                index++;
+                                this.end();
+                                this.emit('finish');
+                                executeNext();
                         });
                         // noinspection JSUnresolvedReference
                         const router = routerOrApplication._router || routerOrApplication;

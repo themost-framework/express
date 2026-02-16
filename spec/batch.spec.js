@@ -84,6 +84,7 @@ describe('Batch', () => {
         expect(responses).toHaveLength(1);
         const userResponse = responses.find(r => r.id === '1');
         expect(userResponse).toBeDefined();
+        expect(userResponse.status).toEqual(404);
     });
 
 });

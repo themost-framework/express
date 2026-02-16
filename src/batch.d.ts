@@ -1,16 +1,16 @@
 import {Router } from 'express';
-import {Subject} from 'rxjs';
-import {ServerResponse, IncomingMessage} from 'http';
 
 declare global {
     namespace http {
         interface IncomingMessage {
+            batchReq?: BatchRequestMessage
             parentReq?: IncomingMessage;
         }
     }
     namespace Express {
-        interface ServerResponse {
-            //
+        interface Request {
+            batchReq?: BatchRequestMessage
+            parentReq?: Request;
         }
     }
 }
