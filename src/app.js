@@ -4,6 +4,7 @@ import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuild
 import {ServicesConfiguration} from './configuration';
 import {serviceRouter} from './service';
 import {BehaviorSubject} from 'rxjs';
+import {IncomingMessage} from 'http';
 
 const configurationProperty = Symbol('configuration');
 const applicationProperty = Symbol('application');
@@ -233,6 +234,9 @@ class ExpressDataApplication extends IApplication {
          * @returns {import('express').RequestHandler}
          */
       return function dataContextMiddleware(req, res, next) {
+          if (req.context && req.parentReq instanceof IncomingMessage) {
+              return next();
+          }
           const context = new ExpressDataContext(thisApp.getConfiguration());
           // define application property
           context[applicationProperty] = thisApp;

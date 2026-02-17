@@ -15,7 +15,7 @@ declare global {
     }
 }
 
-export declare function batch(routerOrApplication: Router, options?: { headers: string[] }): Router;
+export declare function batch(routerOrApplication: Router, options?: { headers: string[], min?: number, max?: number }): Router;
 
 export interface BatchRequestMessage {
     id: string;

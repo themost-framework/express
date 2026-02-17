@@ -25,10 +25,8 @@ describe('Batch', () => {
         // use test passport strategy
         // noinspection JSCheckFunctionSignatures
         passport.use(passportStrategy);
-        // use batch middleware
-        app.use('/api/', batch(app));
         // noinspection JSCheckFunctionSignatures
-        app.use('/api/', passport.authenticate('bearer', { session: false }), serviceRouter);
+        app.use('/api/', passport.authenticate('bearer', { session: false }), batch(app), serviceRouter);
     });
 
     afterAll(async () => {
@@ -37,6 +35,12 @@ describe('Batch', () => {
     });
 
     it('should execute a batch request', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
         let response = await request(app)
             .post('/api/$batch')
             .set('Content-Type', 'application/json')
@@ -61,7 +65,55 @@ describe('Batch', () => {
         const userResponse = responses.find(r => r.id === '1');
         expect(userResponse).toBeDefined();
         expect(userResponse.status).toEqual(200);
-        expect(userResponse.body).toHaveProperty('name', 'anonymous');
+        expect(userResponse.body).toHaveProperty('name', 'alexis.rees@example.com');
+        const usersResponse = responses.find(r => r.id === '2');
+        expect(usersResponse).toBeDefined();
+        expect(usersResponse.status).toEqual(200);
+        expect(usersResponse.body).toHaveProperty('value');
+        expect(usersResponse.body.value).toBeInstanceOf(Array);
+        expect(usersResponse.body.value.length).toBeGreaterThan(0);
+        const user = usersResponse.body.value.find(u => u.name === 'alexis.rees@example.com');
+        expect(user).toBeDefined();
+    });
+
+    it('should execute a batch request with error', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app)
+            .post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'GET',
+                        url: '/api/users/me'
+                    },
+                    {
+                        id: '2',
+                        method: 'GET',
+                        url: '/api/users/me/status'
+                    }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        const { responses } = response.body;
+        expect(responses).toBeDefined();
+        expect(responses).toHaveLength(2);
+        const userResponse = responses.find(r => r.id === '1');
+        expect(userResponse).toBeDefined();
+        expect(userResponse.status).toEqual(200);
+        const errorResponse = responses.find(r => r.id === '2');
+        expect(errorResponse).toBeDefined();
+        expect(errorResponse.status).toEqual(500);
+        expect(errorResponse.body.message).toEqual('This is a status error');
+        expect(errorResponse.body.name).toEqual('Error');
+
     });
 
 
@@ -76,12 +128,17 @@ describe('Batch', () => {
                         id: '1',
                         method: 'GET',
                         url: '/api/NonExistingEndpoint'
+                    },
+                    {
+                        id: '2',
+                        method: 'GET',
+                        url: '/api/NonExistingEndpoint'
                     }
                 ]
             });
         expect(response.status).toEqual(200);
         const { responses } = response.body;
-        expect(responses).toHaveLength(1);
+        expect(responses).toHaveLength(2);
         const userResponse = responses.find(r => r.id === '1');
         expect(userResponse).toBeDefined();
         expect(userResponse.status).toEqual(404);

@@ -1,4 +1,4 @@
-import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils} from '@themost/common';
+import {HttpBadRequestError, HttpNotAcceptableError, HttpNotFoundError, TraceUtils} from '@themost/common';
 import {URL} from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
 import {Router} from 'express';
@@ -74,7 +74,7 @@ class BatchServerResponse extends ServerResponse {
 
 /**
  * @param {import('express').Router} routerOrApplication - The Express routerOrApplication to use for handling batch requests. This is necessary to execute the batch requests using the same routerOrApplication as the main application.
- * @param {{headers:Array<string>}=} [options] - Optional configuration options for the batch middleware.
+ * @param {{headers:Array<string>=,min:number=,max:number=}=} options - Optional configuration options for the batch middleware.
  * @returns {import('express').Handler}
  */
 function batch(routerOrApplication, options) {
@@ -82,6 +82,8 @@ function batch(routerOrApplication, options) {
     const batchRouter = Router();
 
     const opts = options || {
+            min: 2,
+            max: 25,
             headers: [
                 'authorization',
                 'content-type',
@@ -91,6 +93,12 @@ function batch(routerOrApplication, options) {
                 'user-agent'
             ]
     };
+    if (typeof opts.min !== 'number') {
+        opts.min = 2;
+    }
+    if (typeof opts.max !== 'number') {
+        opts.max = 25;
+    }
 
     batchRouter.use(function batchInit(req, res, next) {
         // noinspection JSUnresolvedReference
@@ -118,9 +126,13 @@ function batch(routerOrApplication, options) {
             if (contentType !== 'application/json') {
                 return next(new HttpNotAcceptableError());
             }
+            const { min, max } = opts;
             // check if the request is a batch request
             const {requests: batchRequests} = req.body;
             if (Array.isArray(batchRequests)) {
+                if (batchRequests.length < min || batchRequests.length > max) {
+                    return next(new HttpNotAcceptableError(`Batch request must contain between ${min} and ${max} requests`));
+                }
                 const results = [];
                 let index = 0;
                 function executeNext() {
@@ -187,7 +199,10 @@ function batch(routerOrApplication, options) {
                                 const errorResult = {
                                     id: batchRequest.id,
                                     status: error.status || error.statusCode || 500,
-                                    body: error
+                                    body: Object.getOwnPropertyNames(error).reduce((acc, key) => {
+                                        acc[key] = error[key];
+                                        return acc;
+                                    }, {})
                                 };
                                 // if the error has a constructor name, include it in the response body
                                 if (error.constructor && error.constructor.name) {
@@ -201,11 +216,15 @@ function batch(routerOrApplication, options) {
                         });
                         // noinspection JSUnresolvedReference
                         const router = routerOrApplication._router || routerOrApplication;
-                        router.handle(childReq, childRes, function (out) {
+                        router.handle(childReq, childRes, function (err) {
                             // if the batch request was not handled, return a 404 error
-                            if (out == null) {
-                                childRes.emit('batch.error', new HttpNotFoundError());
+                            if (err == null) {
+                                return childRes.emit('batch.error', new HttpNotFoundError());
                             }
+                            Object.assign(err, {
+                                message: err.message
+                            });
+                            childRes.emit('batch.error', err);
                         });
                     } else {
                         // all batch requests have been executed, return the results
