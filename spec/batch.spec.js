@@ -173,7 +173,66 @@ describe('Batch', () => {
             });
         expect(response.status).toEqual(400);
         expect(response.body.name).toEqual('HttpBadRequestError');
+    });
 
+    it('should execute requests with atomicity group', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app)
+            .post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'GET',
+                        atomicityGroup: 'group1',
+                        url: '/api/users/me'
+                    },
+                    {
+                        id: '2',
+                        method: 'GET',
+                        atomicityGroup: 'group1',
+                        url: '/api/group?$select=name,alternateName'
+                    }
+                ]
+            });
+        expect(response.status).toEqual(200);
+    });
+
+    it('should execute requests and validate relative urls', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app)
+            .post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'GET',
+                        atomicityGroup: 'group1',
+                        url: '/api/users/me'
+                    },
+                    {
+                        id: '2',
+                        method: 'GET',
+                        atomicityGroup: 'group1',
+                        url: 'https://localhost/api/group?$select=name,alternateName'
+                    }
+                ]
+            });
+        expect(response.status).toEqual(400);
     });
 
 });

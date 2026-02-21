@@ -1,8 +1,27 @@
-import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils, Guid, HttpBadRequestError} from '@themost/common';
+import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils, HttpBadRequestError} from '@themost/common';
 import {URL} from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
 import {Router} from 'express';
+import BatchRequestMessageSchema from './batchRequestMessage.json';
+import Ajv from 'ajv';
 
+/**
+ * Represents a single request inside a batch payload.
+ *
+ * @interface BatchRequestMessage
+ * @property {string} id - Unique identifier for the batched request.
+ * @property {string} method - HTTP method (e.g. `GET`, `POST`, `PUT`, `DELETE`).
+ * @property {string} url - Request URL or path (relative to the batch endpoint).
+ * @property {Record<string, string>} headers - Key/value map of request headers.
+ * @property {*} [body] - Optional request body / payload.
+ * @property {string} [atomicityGroup] - Optional atomicity group identifier; requests in the same group should be executed atomically.
+ * @property {string[]} [dependsOn] - Optional list of other request `id`s this request depends on.
+ */
+
+/**
+ * Custom IncomingMessage class to represent individual requests within the batch payload.
+ * This allows us to create child request objects that can be processed by the Express router as if they were real HTTP requests.
+ */
 class BatchIncomingMessage extends IncomingMessage {
     /**
      * @param {import('express').Request} req
@@ -160,6 +179,32 @@ function batch(routerOrApplication, options) {
                         }
                     });
                 }
+                // stage #3 - validate that all batch requests with the same atomicity group have the same method and url properties
+                /**
+                 * @type {{[k:string]:Array<BatchRequestMessage>}}
+                 */
+                const atomicityGroups = {};
+                batchRequests.forEach((batchRequest) => {
+                    // validate batch request against the schema
+                    const validate = new Ajv({
+                        strict: false
+                    }).compile(BatchRequestMessageSchema);
+                    if (validate(batchRequest) === false) {
+                        const error = new HttpBadRequestError(`Batch request with id ${batchRequest.id} is invalid`);
+                        TraceUtils.error(`Batch request with url "${batchRequest.url}" is invalid`);
+                        validate.errors.forEach(validationError => {
+                            TraceUtils.error(`Validation error: ${validationError.instancePath} ${validationError.message}.`);
+                        })
+                        throw error;
+                    }
+                    if (batchRequest.atomicityGroup != null) {
+                        if (Object.hasOwnProperty.call(atomicityGroups, batchRequest.atomicityGroup) === false) {
+                            atomicityGroups[batchRequest.atomicityGroup] = [];
+                        }
+                        // push batch request to the corresponding atomicity group
+                        atomicityGroups[batchRequest.atomicityGroup].push(batchRequest);
+                    }
+                });
                 const results = [];
                 let index = 0;
                 function executeNext() {
@@ -223,6 +268,7 @@ function batch(routerOrApplication, options) {
                                     }, {})
                                 };
                                 // if the error has a constructor name, include it in the response body
+                                // noinspection JSUnresolvedReference
                                 if (error.constructor && error.constructor.name) {
                                     errorResult.body.name = error.constructor && error.constructor.name;
                                 }
