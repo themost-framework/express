@@ -6,7 +6,7 @@ import passport from 'passport';
 import {serviceRouter} from '@themost/express';
 import {TestPassportStrategy} from './passport';
 import request from 'supertest';
-import { finalizeDataApplication } from './utils';
+import {finalizeDataApplication, jsonErrorHandler} from './utils';
 
 describe('Batch', () => {
     let app;
@@ -27,6 +27,7 @@ describe('Batch', () => {
         passport.use(passportStrategy);
         // noinspection JSCheckFunctionSignatures
         app.use('/api/', passport.authenticate('bearer', { session: false }), batch(app), serviceRouter);
+        app.use(jsonErrorHandler())
     });
 
     afterAll(async () => {
@@ -142,6 +143,37 @@ describe('Batch', () => {
         const userResponse = responses.find(r => r.id === '1');
         expect(userResponse).toBeDefined();
         expect(userResponse.status).toEqual(404);
+    });
+
+    it('should validate atomicity group', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app)
+            .post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'GET',
+                        url: '/api/users/me'
+                    },
+                    {
+                        id: '2',
+                        method: 'GET',
+                        atomicityGroup: 'group1',
+                        url: '/api/group'
+                    }
+                ]
+            });
+        expect(response.status).toEqual(400);
+        expect(response.body.name).toEqual('HttpBadRequestError');
+
     });
 
 });

@@ -1,4 +1,4 @@
-import {HttpBadRequestError, HttpNotAcceptableError, HttpNotFoundError, TraceUtils} from '@themost/common';
+import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils, Guid, HttpBadRequestError} from '@themost/common';
 import {URL} from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
 import {Router} from 'express';
@@ -133,20 +133,38 @@ function batch(routerOrApplication, options) {
                 if (batchRequests.length < min || batchRequests.length > max) {
                     return next(new HttpNotAcceptableError(`Batch request must contain between ${min} and ${max} requests`));
                 }
+                // stage #1 - assign id and headers to batch requests
+                batchRequests.forEach((batchRequest, index) => {
+                    // assign id to batch request if not provided
+                    batchRequest.id  = batchRequest.id || (index + 1).toString();
+                    // validate that batch request has method and url properties
+                    if (typeof batchRequest.method !== 'string' || typeof batchRequest.url !== 'string') {
+                        throw new HttpBadRequestError(`Batch request at index ${index} is missing required properties 'method' and 'url'`);
+                    }
+                    // assign headers from the original request to the batch request
+                    // note: only include headers that are specified in the options to prevent leaking sensitive information to the batch requests
+                    batchRequest.headers = {
+                        ...Object.keys(req.headers)
+                            .filter(header => opts.headers.includes(header)).reduce((acc, header) => {
+                                acc[header] = req.headers[header];
+                                return acc;
+                            }, {})
+                    };
+                });
+                // stage #2 - assign atomicity group to batch requests and execute them sequentially
+                const shouldAssignAtomicityGroup = batchRequests.some(batchRequest => batchRequest.atomicityGroup != null);
+                if (shouldAssignAtomicityGroup) {
+                    batchRequests.forEach((batchRequest, index) => {
+                        if (batchRequest.atomicityGroup == null) {
+                            throw new HttpBadRequestError(`Batch request at index ${index} is missing required property 'atomicityGroup' which is required when at least one batch request contains an 'atomicityGroup' property`);
+                        }
+                    });
+                }
                 const results = [];
                 let index = 0;
                 function executeNext() {
                     if (index < batchRequests.length) {
                         const batchRequest = batchRequests[index];
-                        batchRequest.id  = batchRequest.id || (index + 1).toString();
-                        // assign headers from the original request to the batch request
-                        batchRequest.headers = {
-                            ...Object.keys(req.headers)
-                                .filter(header => opts.headers.includes(header)).reduce((acc, header) => {
-                                acc[header] = req.headers[header];
-                                return acc;
-                        }, {})
-                        };
                         // create child request
                         const childReq = new BatchIncomingMessage(batchRequest);
                         // inherit context from the original request
