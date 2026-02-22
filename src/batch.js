@@ -4,6 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import {Router} from 'express';
 import BatchRequestMessageSchema from './batchRequestMessage.json';
 import Ajv from 'ajv';
+import request from 'supertest';
 
 /**
  * Represents a single request inside a batch payload.
@@ -156,6 +157,10 @@ function batch(routerOrApplication, options) {
                 batchRequests.forEach((batchRequest, index) => {
                     // assign id to batch request if not provided
                     batchRequest.id  = batchRequest.id || (index + 1).toString();
+                    // convert relative urls to absolute urls by prefixing them with the original request url
+                    if (batchRequest.url.startsWith('/')) {
+                        batchRequest.url = new URL(batchRequest.url, req.protocol + '://' + req.get('host')).toString();
+                    }
                     // validate that batch request has method and url properties
                     if (typeof batchRequest.method !== 'string' || typeof batchRequest.url !== 'string') {
                         throw new HttpBadRequestError(`Batch request at index ${index} is missing required properties 'method' and 'url'`);

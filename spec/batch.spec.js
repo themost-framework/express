@@ -119,8 +119,8 @@ describe('Batch', () => {
 
 
     it('should execute a batch request with a non-existing endpoint', async () => {
-        let response = await request(app)
-            .post('/api/$batch')
+        const testRequest = request(app).post('/api/$batch');
+        let response = await testRequest
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json')
             .send({
@@ -152,8 +152,8 @@ describe('Batch', () => {
                 name: 'alexis.rees@example.com'
             };
         });
-        let response = await request(app)
-            .post('/api/$batch')
+        const testRequest = request(app).post('/api/$batch');
+        let response = await testRequest
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json')
             .send({
@@ -167,7 +167,7 @@ describe('Batch', () => {
                         id: '2',
                         method: 'GET',
                         atomicityGroup: 'group1',
-                        url: '/api/group'
+                        url: '/api/groups'
                     }
                 ]
             });
@@ -198,22 +198,22 @@ describe('Batch', () => {
                         id: '2',
                         method: 'GET',
                         atomicityGroup: 'group1',
-                        url: '/api/group?$select=name,alternateName'
+                        url: '/api/groups?$select=name,alternateName'
                     }
                 ]
             });
         expect(response.status).toEqual(200);
     });
 
-    it('should execute requests and validate relative urls', async () => {
+    it('should execute requests and validate absolute urls', async () => {
         const mock = jest.spyOn(passportStrategy, 'getUser');
         mock.mockImplementation(() => {
             return {
                 name: 'alexis.rees@example.com'
             };
         });
-        let response = await request(app)
-            .post('/api/$batch')
+        const testRequest = request(app).post('/api/$batch');
+        let response = await testRequest
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json')
             .send({
@@ -228,11 +228,15 @@ describe('Batch', () => {
                         id: '2',
                         method: 'GET',
                         atomicityGroup: 'group1',
-                        url: 'https://localhost/api/group?$select=name,alternateName'
+                        url: '/api/groups?$select=name,alternateName'
                     }
                 ]
             });
-        expect(response.status).toEqual(400);
+        expect(response.status).toEqual(200);
+        for(const r of response.body.responses) {
+            expect(r.body).toBeDefined();
+            expect(r.status).toEqual(200);
+        }
     });
 
 });

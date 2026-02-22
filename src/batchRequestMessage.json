@@ -40,7 +40,7 @@
   "definitions": {
     "relativeUri": {
       "type": "string",
-      "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!//)([^?#]*)(\\?[^#]*)?(#.*)?$",
+      "pattern": "^((?:https?:)?\/\/)",
       "title": "Relative URI",
       "description": "A relative URI that does not include the scheme and host. It may include query parameters and fragments."
     }
