@@ -1,4 +1,5 @@
 import {TraceUtils} from '@themost/common';
+import {IncomingMessage} from 'http';
 
 /**
  * Finalize request context
@@ -6,6 +7,9 @@ import {TraceUtils} from '@themost/common';
  */
 function finalizeContext() {
     return function(req, res, next) {
+        if (req && req.parentReq instanceof IncomingMessage) {
+            return next();
+        }
         if (req.context) {
             // if db is a disposable adapter
             if (req.context.db && typeof req.context.db.dispose === 'function') {

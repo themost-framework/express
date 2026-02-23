@@ -1,12 +1,14 @@
 import express from 'express';
 import {ExpressDataApplication, batch} from '@themost/express';
 import path from 'path';
+import fs from 'fs';
 import {dateReviver} from '@themost/express';
 import passport from 'passport';
 import {serviceRouter} from '@themost/express';
 import {TestPassportStrategy} from './passport';
 import request from 'supertest';
 import {finalizeDataApplication, jsonErrorHandler} from './utils';
+import {DataConfigurationStrategy} from '@themost/data';
 
 describe('Batch', () => {
     let app;
@@ -14,7 +16,15 @@ describe('Batch', () => {
     beforeAll(() => {
         app = express();
         // create a new instance of data application
-        const dataApplication = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+        const dataApplication= new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+        const dataConfiguration = dataApplication.configuration.getStrategy(DataConfigurationStrategy);
+        const adapter = dataConfiguration.adapters.find((adapter) => adapter.default);
+        if (adapter) {
+            // copy test database to a temporary location to avoid conflicts between tests
+            fs.copyFileSync(path.resolve(process.cwd(), adapter.options.database), path.resolve(process.cwd(), 'spec/test/db/test.db'));
+            // update adapter configuration to use the temporary database
+            adapter.options.database = path.resolve(process.cwd(), 'spec/test/db/test.db');
+        }
         app.use(express.json({
             reviver: dateReviver
         }));
@@ -325,6 +335,53 @@ describe('Batch', () => {
         expect(lastResponse.status).toEqual(200);
         expect(lastResponse.body.value).toBeInstanceOf(Array);
         expect(lastResponse.body.value.length).toEqual(0);
+    });
+
+    it('should commit transaction for atomicity groups', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'POST',
+                        atomicityGroup: 'create-customer',
+                        url: '/api/people',
+                        body: {
+                            name: 'Test Customer',
+                            givenName: 'Test',
+                            familyName: 'Customer',
+                        }
+                    },
+                    {
+                        id: '2',
+                        method: 'POST',
+                        atomicityGroup: 'create-order',
+                        url: '/api/orders',
+                        body: {
+                            orderedItem: {
+                                name: 'Apple MacBook Air (13.3-inch, 2013 Version)',
+                            },
+                            customer: {
+                                givenName: 'Test',
+                                familyName: 'Customer',
+                            }
+                        }
+                    }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        for(const r of response.body.responses) {
+            expect(r.body).toBeDefined();
+            expect(r.status).toEqual(200);
+        }
     });
 
 });
