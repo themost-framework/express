@@ -175,6 +175,50 @@ describe('Batch', () => {
         expect(response.body.name).toEqual('HttpBadRequestError');
     });
 
+    it('should more than one atomicity groups', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        const testRequest = request(app).post('/api/$batch');
+        let response = await testRequest
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'GET',
+                        atomicityGroup: 'group1',
+                        url: '/api/users/me'
+                    },
+                    {
+                        id: '2',
+                        method: 'GET',
+                        atomicityGroup: 'group1',
+                        url: '/api/groups'
+                    },
+                    {
+                        id: '3',
+                        method: 'GET',
+                        atomicityGroup: 'group2',
+                        url: '/api/orders'
+                    }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        /**
+         * @type {{responses: {status: number, body: *}[]}}
+         */
+        const { responses } = response.body;
+        expect(responses).toHaveLength(3);
+        for (const  response of responses) {
+            expect(response.status).toEqual(200);
+        }
+    });
+
     it('should execute requests with atomicity group', async () => {
         const mock = jest.spyOn(passportStrategy, 'getUser');
         mock.mockImplementation(() => {
@@ -237,6 +281,50 @@ describe('Batch', () => {
             expect(r.body).toBeDefined();
             expect(r.status).toEqual(200);
         }
+    });
+
+    it('should rollback transaction for atomicity groups', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'POST',
+                        atomicityGroup: 'create-user',
+                        url: '/api/users',
+                        body: {
+                            name: 'Test User',
+                            alternateName: 'test100@example.com'
+                        }
+                    },
+                    {
+                        id: '2',
+                        method: 'GET',
+                        atomicityGroup: 'create-user',
+                        url: '/api/NonExistingEndpoint'
+                    },
+                    {
+                        id: '3',
+                        method: 'GET',
+                        atomicityGroup: 'get-user',
+                        url: '/api/users?$filter=alternateName eq \'test100@example.com\'',
+                    },
+                ]
+            });
+        expect(response.status).toEqual(200);
+        const lastResponse = response.body.responses.find(r => r.id === '3');
+        expect(lastResponse).toBeDefined();
+        expect(lastResponse.status).toEqual(200);
+        expect(lastResponse.body.value).toBeInstanceOf(Array);
+        expect(lastResponse.body.value.length).toEqual(0);
     });
 
 });

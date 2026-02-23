@@ -1,4 +1,5 @@
-{
+/* eslint-disable quotes */
+const schema = {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "BatchRequestMessage",
   "type": "object",
@@ -45,4 +46,8 @@
       "description": "A relative URI that does not include the scheme and host. It may include query parameters and fragments."
     }
   }
+}
+
+export {
+    schema
 }

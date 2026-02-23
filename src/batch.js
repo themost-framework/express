@@ -1,10 +1,10 @@
-import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils, HttpBadRequestError} from '@themost/common';
+import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils, HttpBadRequestError, Guid} from '@themost/common';
 import {URL} from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
-import {Router} from 'express';
-import BatchRequestMessageSchema from './batchRequestMessage.json';
+import {response, Router} from 'express';
+import {schema as BatchRequestMessageSchema} from './batch.schema';
 import Ajv from 'ajv';
-import request from 'supertest';
+import '@themost/promise-sequence';
 
 /**
  * Represents a single request inside a batch payload.
@@ -34,6 +34,10 @@ class BatchIncomingMessage extends IncomingMessage {
         const uri = new URL(url, 'http://localhost');
         this.url = uri.pathname;
         this.body = body;
+        // use _body to disable body parsing in the child request since the body is already parsed in the parent request
+        if (this.method === 'POST' || this.method === 'PUT' || this.method === 'PATCH') {
+            this._body = this.body || {};
+        }
         this.query = Object.fromEntries(uri.searchParams.entries());
         this.headers = headers || {};
         if (this.body) {
@@ -210,97 +214,170 @@ function batch(routerOrApplication, options) {
                         atomicityGroups[batchRequest.atomicityGroup].push(batchRequest);
                     }
                 });
-                const results = [];
-                let index = 0;
-                function executeNext() {
-                    if (index < batchRequests.length) {
-                        const batchRequest = batchRequests[index];
-                        // create child request
-                        const childReq = new BatchIncomingMessage(batchRequest);
-                        // inherit context from the original request
-                        Object.defineProperty(childReq, 'context', {
-                            get() {
-                                return req.context;
-                            },
-                            configurable: true
-                        });
-                        Object.defineProperty(childReq, 'parentReq', {
-                            get() {
-                                return req;
-                            },
-                            configurable: true
-                        });
-                        Object.defineProperty(childReq, 'batchReq', {
-                            get() {
-                                return batchRequest;
-                            },
-                            configurable: true
-                        });
-                        // create a new response object for the batch request
-                        const childRes = new BatchServerResponse(childReq);
-                        // add events to capture the response from the batch request
-                        childRes.on(
-                            'batch.data',
-                            /**
-                             * @this {ServerResponse}
-                             * @param response
-                             */
-                            function (response) {
-                                results.push({
-                                    id: batchRequest.id,
-                                    status: response.statusCode,
-                                    headers: response.headers,
-                                    body: response.body
-                                });
-                                index++;
-                                this.end();
-                                this.emit('finish');
-                                executeNext();
-                        });
-                        childRes.on(
-                            'batch.error',
-                            /**
-                             * @this {ServerResponse}
-                             * @param {*} error
-                             */
-                            function (error) {
-                                const errorResult = {
-                                    id: batchRequest.id,
-                                    status: error.status || error.statusCode || 500,
-                                    body: Object.getOwnPropertyNames(error).reduce((acc, key) => {
-                                        acc[key] = error[key];
-                                        return acc;
-                                    }, {})
-                                };
-                                // if the error has a constructor name, include it in the response body
-                                // noinspection JSUnresolvedReference
-                                if (error.constructor && error.constructor.name) {
-                                    errorResult.body.name = error.constructor && error.constructor.name;
-                                }
-                                results.push(errorResult);
-                                index++;
-                                this.end();
-                                this.emit('finish');
-                                executeNext();
-                        });
-                        // noinspection JSUnresolvedReference
-                        const router = routerOrApplication._router || routerOrApplication;
-                        router.handle(childReq, childRes, function (err) {
-                            // if the batch request was not handled, return a 404 error
-                            if (err == null) {
-                                return childRes.emit('batch.error', new HttpNotFoundError());
-                            }
-                            Object.assign(err, {
-                                message: err.message
+                function executeBatchRequestAsync(batchRequest) {
+                    return new Promise((resolve, reject) => {
+                        try {
+                            // create child request
+                            const childReq = new BatchIncomingMessage(batchRequest);
+                            // inherit context from the original request
+                            Object.defineProperty(childReq, 'context', {
+                                get() {
+                                    return req.context;
+                                },
+                                configurable: true
                             });
-                            childRes.emit('batch.error', err);
-                        });
-                    } else {
-                        // all batch requests have been executed, return the results
-                        res.json({ responses: results });
-                    }
+                            Object.defineProperty(childReq, 'parentReq', {
+                                get() {
+                                    return req;
+                                },
+                                configurable: true
+                            });
+                            Object.defineProperty(childReq, 'batchReq', {
+                                get() {
+                                    return batchRequest;
+                                },
+                                configurable: true
+                            });
+                            // create a new response object for the batch request
+                            const childRes = new BatchServerResponse(childReq);
+                            // add events to capture the response from the batch request
+                            childRes.on(
+                                'batch.data',
+                                /**
+                                 * @this {ServerResponse}
+                                 * @param response
+                                 */
+                                function (response) {
+                                    this.end();
+                                    this.emit('finish');
+                                    resolve({
+                                        id: batchRequest.id,
+                                        status: response.statusCode,
+                                        headers: response.headers,
+                                        body: response.body
+                                    });
+                                });
+                            childRes.on(
+                                'batch.error',
+                                /**
+                                 * @this {ServerResponse}
+                                 * @param {*} error
+                                 */
+                                function (error) {
+                                    const errorResult = {
+                                        id: batchRequest.id,
+                                        status: error.status || error.statusCode || 500,
+                                        body: Object.getOwnPropertyNames(error).reduce((acc, key) => {
+                                            acc[key] = error[key];
+                                            return acc;
+                                        }, {})
+                                    };
+                                    // if the error has a constructor name, include it in the response body
+                                    // noinspection JSUnresolvedReference
+                                    if (error.constructor && error.constructor.name) {
+                                        errorResult.body.name = error.constructor && error.constructor.name;
+                                    }
+                                    this.end();
+                                    this.emit('finish');
+                                    // noinspection JSUnresolvedReference
+                                    if (this.req.batchReq && this.req.batchReq.atomicityGroup) {
+                                        // if the batch request is part of an atomicity group, throw an error to trigger a transaction rollback for the entire group
+                                        reject(errorResult);
+                                    }
+                                    resolve(errorResult);
+                                });
+                            // noinspection JSUnresolvedReference
+                            const router = routerOrApplication._router || routerOrApplication;
+                            router.handle(childReq, childRes, function (err) {
+                                // if the batch request was not handled, return a 404 error
+                                if (err == null) {
+                                    return childRes.emit('batch.error', new HttpNotFoundError());
+                                }
+                                Object.assign(err, {
+                                    message: err.message
+                                });
+                                childRes.emit('batch.error', err);
+                            });
+                        } catch(err) {
+                            return reject(err);
+                        }
+
+                    });
                 }
-                executeNext();
+                // check atomicity groups for consistency
+                if (Object.keys(atomicityGroups).length > 0) {
+                    const results = batchRequests.map(({id}) => {
+                        return {
+                            id,
+                        }
+                    });
+                    // create a map of atomicity groups to functions that execute the batch requests in the group sequentially within a transaction
+                    const sources = Object.keys(atomicityGroups).map((atomicityGroup) => {
+                        // get batch requests for the atomicity group
+                        const requests = atomicityGroups[atomicityGroup];
+                        // return a function that executes the batch requests in the atomicity group sequentially within a transaction
+                        return () => {
+                            // execute batch requests in the atomicity group sequentially within a transaction
+                            Object.assign(req.context.db, {
+                                identifier: Guid.newGuid().toString()
+                            });
+                            return req.context.db.executeInTransactionAsync(async () => {
+                                const intermediateResults = await Promise.sequence(requests.map((request) => {
+                                    return () => {
+                                        return executeBatchRequestAsync(request);
+                                    }
+                                }));
+                                let index =0;
+                                for (const request of requests) {
+                                    const intermediateResult = intermediateResults[index];
+                                    const result = results.find(r => r.id === request.id);
+                                    if (result) {
+                                        Object.assign(result, intermediateResult);
+                                    }
+                                    index++;
+                                }
+                            }).catch((atomicityGroupError) => {
+                                // if any request in the atomicity group fails, capture the error for all requests in the group
+                                requests.forEach((request) => {
+                                    const result = results.find(r => r.id === request.id);
+                                    if (result) {
+                                        if (result.id === atomicityGroupError.id) {
+                                            Object.assign(result, atomicityGroupError, {
+                                                atomicityGroup
+                                            });
+                                        } else {
+                                            // for requests that belongs to the same atomicity group but did not cause the error, set status to 0 to indicate that they were not executed due to the failure of another request in the same atomicity group
+                                            Object.assign(result, {
+                                                status: 0,
+                                                atomicityGroup
+                                            });
+                                        }
+                                    }
+                                });
+                                const result = results.find(r => r.id === atomicityGroupError.id);
+                                if (result) {
+                                    Object.assign(result, atomicityGroupError);
+                                }
+                            });
+                        }
+                    });
+                    Promise.sequence(sources).then(() => {
+                        res.json({ responses: results });
+                    }).catch((err) => {
+                        next(err);
+                    });
+                } else {
+                    // no atomicity groups, execute batch requests sequentially
+                    void Promise.sequence(batchRequests.map((request) => {
+                        return () => {
+                            return executeBatchRequestAsync(request);
+                        }
+                    })).then((results) => {
+                        res.json({ responses: results });
+                    }).catch((err) => {
+                        next(err);
+                    });
+                }
             } else {
                 // not a batch request, continue to the next middleware
                 return next();
