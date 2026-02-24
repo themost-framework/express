@@ -1,10 +1,11 @@
 import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils, HttpBadRequestError, Guid} from '@themost/common';
 import {URL} from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
-import {response, Router} from 'express';
+import {Router} from 'express';
 import {schema as BatchRequestMessageSchema} from './batch.schema';
 import Ajv from 'ajv';
 import '@themost/promise-sequence';
+import at from 'lodash/at';
 
 /**
  * Represents a single request inside a batch payload.
@@ -322,20 +323,38 @@ function batch(routerOrApplication, options) {
                                 identifier: Guid.newGuid().toString()
                             });
                             return req.context.db.executeInTransactionAsync(async () => {
-                                const intermediateResults = await Promise.sequence(requests.map((request) => {
+                                await Promise.sequence(requests.map((request) => {
                                     return () => {
-                                        return executeBatchRequestAsync(request);
+                                        // parse body for assigning params in the batch request
+                                        if (request.body && typeof request.body === 'object') {
+                                            const body = JSON.parse(JSON.stringify(request.body), (key, value) => {
+                                                if (typeof value === 'string' && value.startsWith('$$')) {
+                                                    // split property path by dot notation to extract dataset and property name for value assignment
+                                                    // e.g. "$$dataset.property" -> dataset: "dataset", property: "property"
+                                                    const property = value.substring(2).split('.');
+                                                    // get dataset name from the property path
+                                                    const dataset = property.shift();
+                                                    // get the result of the batch request that corresponds to the dataset name
+                                                    const result = results.find(r => r.id === dataset);
+                                                    if (result) {
+                                                        const [val] = at(result.body, property);
+                                                        return val;
+                                                    } else {
+                                                        throw new HttpBadRequestError(`Batch request with id "${dataset}" cannot be found for property reference "${value}"`);
+                                                    }
+                                                }
+                                                return value;
+                                            });
+                                            request.body = request._body = body;
+                                        }
+                                        return executeBatchRequestAsync(request).then((intermediateResult) => {
+                                            const result = results.find(r => r.id === request.id);
+                                            if (result) {
+                                                Object.assign(result, intermediateResult);
+                                            }
+                                        });
                                     }
                                 }));
-                                let index =0;
-                                for (const request of requests) {
-                                    const intermediateResult = intermediateResults[index];
-                                    const result = results.find(r => r.id === request.id);
-                                    if (result) {
-                                        Object.assign(result, intermediateResult);
-                                    }
-                                    index++;
-                                }
                             }).catch((atomicityGroupError) => {
                                 // if any request in the atomicity group fails, capture the error for all requests in the group
                                 requests.forEach((request) => {
