@@ -428,4 +428,48 @@ describe('Batch', () => {
         }
     });
 
+    it('should use property references', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'POST',
+                        atomicityGroup: 'create-order',
+                        url: '/api/people',
+                        body: {
+                            name: 'Test Customer',
+                            givenName: 'Test',
+                            familyName: 'Customer',
+                        }
+                    },
+                    {
+                        id: '2',
+                        method: 'POST',
+                        atomicityGroup: 'create-order',
+                        url: '/api/orders',
+                        body: {
+                            orderedItem: {
+                                name: 'Apple MacBook Air (13.3-inch, 2013 Version)',
+                            },
+                            customer: '$$1.id'
+                        }
+                    }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        for(const r of response.body.responses) {
+            expect(r.body).toBeDefined();
+            expect(r.status).toEqual(200);
+        }
+    });
+
 });

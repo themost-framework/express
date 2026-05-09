@@ -215,6 +215,11 @@ function batch(routerOrApplication, options) {
                         atomicityGroups[batchRequest.atomicityGroup].push(batchRequest);
                     }
                 });
+                const results = batchRequests.map(({id}) => {
+                    return {
+                        id,
+                    }
+                });
                 function executeBatchRequestAsync(batchRequest) {
                     return new Promise((resolve, reject) => {
                         try {
@@ -307,11 +312,6 @@ function batch(routerOrApplication, options) {
                 }
                 // check atomicity groups for consistency
                 if (Object.keys(atomicityGroups).length > 0) {
-                    const results = batchRequests.map(({id}) => {
-                        return {
-                            id,
-                        }
-                    });
                     // create a map of atomicity groups to functions that execute the batch requests in the group sequentially within a transaction
                     const sources = Object.keys(atomicityGroups).map((atomicityGroup) => {
                         // get batch requests for the atomicity group
