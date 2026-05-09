@@ -67,3 +67,6 @@ typings/
 
 # application
 dist/
+
+# test database
+spec/test/db/test.db

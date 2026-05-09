@@ -7,6 +7,7 @@ import {LangUtils, HttpNotFoundError, HttpBadRequestError, HttpMethodNotAllowedE
 import { ResponseFormatter, StreamFormatter } from './formatter';
 import {multerInstance} from './multer';
 import fs from 'fs';
+import {IncomingMessage} from 'http';
 
 const parseBoolean = LangUtils.parseBoolean;
 const DefaultTopOption = 25;
@@ -106,6 +107,9 @@ const DefaultTopOption = 25;
  */
 
 function finalizeContext(req, next) {
+    if (req && req.parentReq instanceof IncomingMessage) {
+        return next();
+    }
     if (req && req.context && typeof req.context.finalize === 'function') {
         return req.context.finalize(next);
     }
