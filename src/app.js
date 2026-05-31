@@ -228,7 +228,9 @@ class ExpressDataApplication extends IApplication {
         this.container.next(app);
       return function dataContextMiddleware(req, res, next) {
           if (req.parentReq instanceof IncomingMessage) {
-              return next();
+              if (Object.prototype.hasOwnProperty.call(req.parentReq, 'context')) {
+                    return next();
+                }
           }
           const context = new ExpressDataContext(thisApp.getConfiguration());
           // define application property
