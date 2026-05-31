@@ -4,6 +4,7 @@ import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuild
 import {ServicesConfiguration} from './configuration';
 import {serviceRouter} from './service';
 import {BehaviorSubject} from 'rxjs';
+import {IncomingMessage} from 'http';
 
 const configurationProperty = Symbol('configuration');
 const applicationProperty = Symbol('application');
@@ -198,7 +199,7 @@ class ExpressDataApplication extends IApplication {
 
     /**
      * @param {Express=} app
-     * @returns {*}
+     * @returns {import('express').RequestHandler}
      */
     middleware(app) {
       const thisApp = this;
@@ -226,6 +227,9 @@ class ExpressDataApplication extends IApplication {
         // broadcast container
         this.container.next(app);
       return function dataContextMiddleware(req, res, next) {
+          if (req.parentReq instanceof IncomingMessage) {
+              return next();
+          }
           const context = new ExpressDataContext(thisApp.getConfiguration());
           // define application property
           context[applicationProperty] = thisApp;
@@ -252,9 +256,10 @@ class ExpressDataApplication extends IApplication {
            * @memberOf req
            */
           Object.defineProperty(req, 'context', {
-            get: function() {
-              return context;
-            }
+              get: function () {
+                  return context;
+              },
+              configurable: true
           });
           res.on('close', () => {
             if (req.context) {
