@@ -2,12 +2,13 @@
 // tslint:disable-next-line:ordered-imports
 import {ConfigurationBase, IApplicationService, ApplicationBase} from '@themost/common';
 import {ApplicationServiceConstructor} from '@themost/common/app';
-import {DataAdapterConstructor, DefaultDataContext, ODataModelBuilder} from '@themost/data';
+import {DataAdapterConstructor, DataModel, DefaultDataContext, ODataModelBuilder} from '@themost/data';
 import {Application, RequestHandler, Router} from 'express';
 import {BehaviorSubject} from 'rxjs';
 
 export declare interface ApplicationConfiguration {
     [key: string]: unknown;
+
     services?: { serviceType: string; strategyType?: string }[];
     settings?: {
         [key: string]: unknown,
@@ -20,13 +21,13 @@ export declare interface ApplicationConfiguration {
             unattendedExecutionAccount?: string;
         },
         schema?: {
-            loaders?: { loaderType: string;}[];
+            loaders?: { loaderType: string; }[];
         },
         i18n?: {
             defaultLocale: string;
             locales: string[];
         }
-    }
+    };
     adapterTypes?: {
         name: string;
         invariantName: string;
@@ -128,6 +129,8 @@ export interface InteractiveUser {
 
 export declare class ExpressDataContext extends DefaultDataContext {
 
+    model(name: any): DataModel;
+
     public application: ExpressDataApplication;
 
     public getConfiguration(): ConfigurationBase;
@@ -143,6 +146,19 @@ declare global {
     namespace Express {
         interface Request {
             context: ExpressDataContext;
+        }
+    }
+}
+
+declare global {
+    namespace http {
+        interface IncomingMessage {
+            parentReq?: IncomingMessage;
+        }
+    }
+    namespace Express {
+        interface Request {
+            parentReq?: Request;
         }
     }
 }
