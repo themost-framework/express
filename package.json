@@ -35,15 +35,15 @@
   },
   "homepage": "https://github.com/themost-framework/express#readme",
   "peerDependencies": {
-    "@themost/common": "^2.12.0",
+    "@themost/common": "^2",
     "@themost/data": "^2",
     "@themost/query": "^2",
     "@themost/xml": "^2",
     "express": "^5.2.1"
   },
   "dependencies": {
-    "lodash": "^4.17.23",
-    "multer": "2.0.2",
+    "lodash": "^4.18.1",
+    "multer": "^2.1.1",
     "on-headers": "^1.0.2",
     "pluralize": "^7.0.0",
     "q": "^1.5.1",
@@ -81,7 +81,6 @@
     "globals": "^16.0.0",
     "jest": "^29.7.0",
     "minimist": ">=0.2.1",
-    "multer": "2.0.2",
     "on-headers": "^1.0.2",
     "passport": "^0.6.0",
     "passport-http-bearer": "^1.0.1",

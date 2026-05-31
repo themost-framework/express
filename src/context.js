@@ -1,4 +1,5 @@
 import {TraceUtils} from '@themost/common';
+import {IncomingMessage} from 'http';
 
 /**
  * Finalize request context
@@ -7,6 +8,12 @@ import {TraceUtils} from '@themost/common';
 function finalizeContext() {
     return function(req, res, next) {
         if (req.context) {
+            // if request has a parent request with a context, exit without doing anything
+            if (req.parentReq instanceof IncomingMessage) {
+                if (Object.prototype.hasOwnProperty.call(req.parentReq, 'context')) {
+                    return next();
+                }
+            }
             // if db is a disposable adapter
             if (req.context.db && typeof req.context.db.dispose === 'function') {
                 // dispose db
