@@ -1,5 +1,5 @@
 import Symbol from 'symbol';
-import {Args, ConfigurationBase, ApplicationService, IApplication} from '@themost/common';
+import {Args, ConfigurationBase, ApplicationService, IApplication, TraceUtils} from '@themost/common';
 import {DefaultDataContext, DataConfigurationStrategy, ODataConventionModelBuilder, ODataModelBuilder} from '@themost/data';
 import {ServicesConfiguration} from './configuration';
 import {serviceRouter} from './service';
@@ -227,6 +227,9 @@ class ExpressDataApplication extends IApplication {
         // broadcast container
         this.container.next(app);
       return function dataContextMiddleware(req, res, next) {
+          if (req.context && req.parentReq instanceof IncomingMessage) {
+              return next();
+          }
           if (req.parentReq instanceof IncomingMessage) {
               if (Object.prototype.hasOwnProperty.call(req.parentReq, 'context')) {
                     // init context property (leave it configurable to allow context replacement in sub requests)
@@ -283,19 +286,29 @@ class ExpressDataApplication extends IApplication {
               },
               configurable: true
           });
-          res.on('close', () => {
-            if (req.context) {
-                // if db is a disposable adapter
-                if (req.context.db && typeof req.context.db.dispose === 'function') {
-                    // dispose db
-                    req.context.db.dispose();
-                }
-              // and finalize data context
-              return req.context.finalize( () => {
-                //
-              });
-            }
-          });
+
+          /**
+           * Finalizes the current context by disposing the underlying data adapter if exists and then calling the finalize method of the context
+           */
+          const closeListener = function() {
+              if (req.context) {
+                  // if db is a disposable adapter
+                  if (req.context.db && typeof req.context.db.dispose === 'function') {
+                      // dispose db
+                      req.context.db.dispose();
+                  }
+                  // and finalize data context
+                  return req.context.finalize( (err) => {
+                      if (err) {
+                          TraceUtils.warn('An error occurred while finalizing data context using server response close listener');
+                          TraceUtils.warn(err);
+                      }
+                  });
+              }
+          }
+          // finalize context on response finish or close
+          res.once('finish', closeListener);
+          res.once('close', closeListener);
           return next();
       };
     }
