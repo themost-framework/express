@@ -123,7 +123,7 @@ Authentication and other headers from the outer request are forwarded to each su
 | `body` | No | Request body for `POST`, `PUT`, or `PATCH`. |
 | `atomicityGroup` | No | Group name for transactional execution. See [Atomicity Groups](#atomicity-groups). |
 | `dependsOn` | No | Present in the JSON schema but **not used** by the current implementation. |
-| `headers` | No | Sub-request headers. They are merged with the headers inherited from the outer request and take precedence over them. The `Authorization` header cannot be defined by a sub-request: it is always inherited from the outer request, and a sub-request that defines it fails the whole batch with `400 Bad Request`. |
+| `headers` | No | Sub-request headers. They are merged with the headers inherited from the outer request and take precedence over them. The `Authorization` and `Cookie` headers cannot be defined by a sub-request: they are always inherited from the outer request, and a sub-request that defines either of them fails the whole batch with `400 Bad Request`. |
 
 ### URL resolution
 
@@ -426,7 +426,7 @@ These cause the outer request to fail (non-`200` status):
 | Fewer than `min` or more than `max` sub-requests | `400 Bad Request` |
 | `$batch` request nested inside another batch | `400 Bad Request` (returned as sub-request result) |
 | Missing `method` or `url` on a sub-request | `400 Bad Request` |
-| Sub-request defines an `Authorization` header | `400 Bad Request` |
+| Sub-request defines an `Authorization` or `Cookie` header | `400 Bad Request` |
 | Sub-request `url` outside of the current service (other origin or outside the service root) | `400 Bad Request` |
 | `atomicityGroup` present on some but not all sub-requests | `400 Bad Request` |
 | Sub-request fails JSON schema validation | `400 Bad Request` |
@@ -480,7 +480,7 @@ app.use('/api/', batch(app, {
 |--------|---------|-------------|
 | `min` | `2` | Minimum number of sub-requests per batch. |
 | `max` | `25` | Maximum number of sub-requests per batch. |
-| `headers` | See above | Headers copied from the outer request to each sub-request. Only these headers are forwarded, to avoid leaking sensitive proxy or internal headers. `Authorization` is always forwarded, even if it is not included. |
+| `headers` | See above | Headers copied from the outer request to each sub-request. Only these headers are forwarded, to avoid leaking sensitive proxy or internal headers. `Authorization` and `Cookie` are always forwarded, even if they are not included. |
 
 ---
 

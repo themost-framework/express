@@ -762,11 +762,11 @@ describe('Batch', () => {
     });
 
 
-    it('should prohibit authorization header in batch requests', async () => {
+    it('should prohibit identity headers in batch requests', async () => {
         jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
             return { name: 'alexis.rees@example.com' };
         });
-        for (const header of ['Authorization', 'authorization', 'AUTHORIZATION']) {
+        for (const header of ['Authorization', 'authorization', 'AUTHORIZATION', 'Cookie', 'cookie']) {
             const response = await request(app).post('/api/$batch')
                 .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
@@ -777,19 +777,20 @@ describe('Batch', () => {
                     ]
                 });
             expect(response.status).toEqual(400);
-            expect(response.body.message).toContain('cannot define authorization header');
+            expect(response.body.message).toContain(`cannot define ${header.toLowerCase()} header`);
         }
     });
 
-    it('should always inherit authorization header', async () => {
+    it('should always inherit identity headers', async () => {
         const other = express();
         other.use(express.json());
         // authorization is not included in the inherited headers
         other.use('/api/', batch(other, { headers: ['accept'] }));
-        other.get('/api/TestAuthorization', (req, res) => res.json({ authorization: req.get('authorization') }));
+        other.get('/api/TestAuthorization', (req, res) => res.json({ authorization: req.get('authorization'), cookie: req.get('cookie') }));
         const response = await request(other).post('/api/$batch')
             .set('Content-Type', 'application/json')
             .set('Authorization', 'Bearer parent-token')
+            .set('Cookie', 'sid=parent-session')
             .send({
                 requests: [
                     { id: '1', method: 'GET', url: 'TestAuthorization' },
@@ -798,7 +799,7 @@ describe('Batch', () => {
             });
         expect(response.status).toEqual(200);
         for (const r of response.body.responses) {
-            expect(r.body).toEqual({ authorization: 'Bearer parent-token' });
+            expect(r.body).toEqual({ authorization: 'Bearer parent-token', cookie: 'sid=parent-session' });
         }
     });
 
