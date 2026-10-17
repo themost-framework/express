@@ -142,6 +142,7 @@ function captureResponse(res) {
             return;
         }
         completed = true;
+        // noinspection JSUndefinedPropertyAssignment
         res.body = body;
         res.emit('batch.data', res);
     };
@@ -155,6 +156,7 @@ function captureResponse(res) {
         },
         send(body) {
             if (body != null && typeof body === 'object' && !Buffer.isBuffer(body)) {
+                // noinspection JSUnresolvedReference
                 return res.json(body);
             }
             if (body != null) {
@@ -287,7 +289,7 @@ function batch(routerOrApplication, options) {
                     if (typeof batchRequest.method !== 'string' || typeof batchRequest.url !== 'string') {
                         throw new HttpBadRequestError(`Batch request at index ${index} is missing required properties 'method' and 'url'`);
                     }
-                    // convert relative urls to absolute urls
+                    // convert relative URLs to absolute URLs
                     // e.g. "/api/users" is resolved against the host of the original request
                     // and "users" is resolved against the service root (the base url of the batch endpoint)
                     const serviceRoot = new URL(req.baseUrl.replace(/\/$/, '') + '/', req.protocol + '://' + req.get('host'));
@@ -295,7 +297,8 @@ function batch(routerOrApplication, options) {
                     try {
                         uri = new URL(batchRequest.url, serviceRoot);
                     } catch (err) {
-                        throw new HttpBadRequestError(`Batch request at index ${index} has an invalid url`);
+                        TraceUtils.error(err);
+                        throw new HttpBadRequestError(`Batch request at index ${index} has an invalid URL`);
                     }
                     // a batch request is allowed to target only resources of the current service
                     // e.g. a request to another host or to a path outside the service root (even through "../" segments) is prohibited
