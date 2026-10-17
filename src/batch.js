@@ -270,6 +270,8 @@ function batch(routerOrApplication, options) {
             if (req.batchReq) {
                 return next(new HttpBadRequestError('Nested batch requests are not supported'));
             }
+            // disable caching of batch responses
+            res.set('Cache-Control', 'no-store');
             if (!req.is('application/json')) {
                 return next(new HttpError(415));
             }

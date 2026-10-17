@@ -85,6 +85,8 @@ Content-Type: application/json
 
 Authentication and other headers from the outer request are forwarded to each sub-request (see [Configuration](#configuration)).
 
+Batch responses are never cached: the `$batch` response is always sent with `Cache-Control: no-store`. Sub-requests are always executed against the service; cache headers returned by sub-requests are reported in their `headers` but do not affect the batch response.
+
 ---
 
 ## Request Format

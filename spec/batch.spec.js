@@ -829,4 +829,37 @@ describe('Batch', () => {
         }
     });
 
+
+    it('should disable caching of batch responses', async () => {
+        const other = express();
+        other.use(express.json());
+        other.use('/api/', batch(other));
+        other.get('/api/TestCache', (req, res) => res.set('Cache-Control', 'public, max-age=3600').json({ value: 1 }));
+        const payload = {
+            requests: [
+                { id: '1', method: 'GET', url: 'TestCache' },
+                { id: '2', method: 'GET', url: 'TestCache' }
+            ]
+        };
+        let response = await request(other).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .send(payload);
+        expect(response.status).toEqual(200);
+        expect(response.headers['cache-control']).toEqual('no-store');
+        // a conditional request should not return a cached response
+        response = await request(other).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('If-None-Match', response.headers.etag)
+            .send(payload);
+        expect(response.status).toEqual(200);
+        expect(response.headers['cache-control']).toEqual('no-store');
+        expect(response.body.responses.length).toEqual(2);
+        // batch-level errors should not be cached either
+        response = await request(other).post('/api/$batch')
+            .set('Content-Type', 'text/plain')
+            .send('requests');
+        expect(response.status).toEqual(415);
+        expect(response.headers['cache-control']).toEqual('no-store');
+    });
+
 });
