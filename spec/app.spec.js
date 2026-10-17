@@ -352,7 +352,7 @@ describe('ExpressDataApplication', () => {
                     });
                 });
                 // get app stack
-                const stack = container._router.stack;
+                const stack = container.router.stack;
                 // get last router
                 const index = stack.length - 1;
                 // get last route
@@ -396,7 +396,7 @@ describe('ExpressDataApplication', () => {
                 });
             });
             // get app stack
-            const stack = container._router.stack;
+            const stack = container.router.stack;
             // find dataContextMiddleware
             const findIndex = stack.findIndex(item => {
                 return item.name === 'dataContextMiddleware';

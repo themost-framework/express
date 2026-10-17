@@ -90,7 +90,8 @@ describe('serviceRouter', () => {
     });
 
     afterAll(async () => {
-        await finalizeDataApplication(app.get(ExpressDataApplication.name));
+        const service = app.get('ExpressDataApplication')
+        await finalizeDataApplication(service);
     });
 
     it('should GET /api/users/', async () => {
@@ -140,11 +141,14 @@ describe('serviceRouter', () => {
             return next();
         });
         router.stack.unshift(...addRoute.stack);
-        jest.spyOn(passportStrategy, 'getUser').mockReturnValue({
+        jest.spyOn(passportStrategy, 'getUser', null).mockReturnValue({
             name: 'alexis.rees@example.com'
         });
         let response = await request(app)
             .get('/api/users/')
+            .query({
+                $top: 10
+            })
             .set('Content-Type', 'application/json')
             .set('Accept', 'application/json');
         expect(response.status).toEqual(200);
@@ -709,9 +713,9 @@ describe('serviceRouter', () => {
             .field('alternateName', 'testing')
             .field('published', true)
             .attach('file', path.resolve(__dirname, 'test/models/avatars/avatar1.png'))
-        expect(response.status).toBe(200);
+        expect(response.status).toEqual(200);
         expect(response.body.dateCreated).toBeTruthy();
-        finalizeDataApplication(application);
+        await finalizeDataApplication(application);
     });
 
 

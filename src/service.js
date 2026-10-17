@@ -107,8 +107,8 @@ function findByAlternateName(item) {
 }
 
 function getServiceRouter(app) {
-    if (app && app._router && app._router.stack) {
-        const router = app._router.stack.find(findByAlternateName);
+    if (app && app.router && app.router.stack) {
+        const router = app.router.stack.find(findByAlternateName);
         if (router) {
             return router.handle;
         }

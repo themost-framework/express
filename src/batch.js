@@ -469,8 +469,8 @@ function batch(routerOrApplication, options) {
                                     }
                                     return resolve(errorResult);
                                 });
-                            // noinspection JSUnresolvedReference
-                            const router = routerOrApplication._router || routerOrApplication;
+                            // note: express 5 application handles the request directly (app._router is no longer available)
+                            const router = routerOrApplication;
                             router.handle(childReq, childRes, function (err) {
                                 // if the batch request was not handled, return a 404 error
                                 if (err == null) {
