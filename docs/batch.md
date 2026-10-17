@@ -134,6 +134,8 @@ Relative URLs are converted to absolute URLs before routing:
 users/me       →  http://<host>/api/users/me   (batch() mounted at /api/)
 ```
 
+A sub-request may target only resources of the current service. A URL with a different origin (protocol and host) than the outer request, or a path outside the service root (including paths that leave it through `../` segments, e.g. `/api/../admin`), is rejected and the whole batch fails with `400 Bad Request`.
+
 Only the pathname and query string are used when the sub-request is dispatched through Express.
 
 ---
@@ -424,6 +426,7 @@ These cause the outer request to fail (non-`200` status):
 | Fewer than `min` or more than `max` sub-requests | `400 Bad Request` |
 | `$batch` request nested inside another batch | `400 Bad Request` (returned as sub-request result) |
 | Missing `method` or `url` on a sub-request | `400 Bad Request` |
+| Sub-request `url` outside of the current service (other origin or outside the service root) | `400 Bad Request` |
 | `atomicityGroup` present on some but not all sub-requests | `400 Bad Request` |
 | Sub-request fails JSON schema validation | `400 Bad Request` |
 

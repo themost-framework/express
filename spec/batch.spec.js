@@ -713,4 +713,52 @@ describe('Batch', () => {
         expect(byId('6').status).toEqual(424);
     });
 
+
+    it('should prohibit requests outside of the current service', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const urls = [
+            'http://example.com/api/users/me',
+            '//example.com/api/users/me',
+            '/other/users/me',
+            '/api/../other/users/me',
+            '../other/users/me',
+            '/apiother/users/me'
+        ];
+        for (const url of urls) {
+            const response = await request(app).post('/api/$batch')
+                .set('Content-Type', 'application/json')
+                .set('Accept', 'application/json')
+                .send({
+                    requests: [
+                        { id: '1', method: 'GET', url },
+                        { id: '2', method: 'GET', url: 'users/me' }
+                    ]
+                });
+            expect(response.status).toEqual(400);
+            expect(response.body.message).toContain('outside of the current service');
+        }
+    });
+
+    it('should allow absolute urls of the current service', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const testRequest = request(app).post('/api/$batch');
+        const response = await testRequest
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    { id: '1', method: 'GET', url: new URL('/api/users/me', testRequest.url).toString() },
+                    { id: '2', method: 'GET', url: '/api/./users/me' }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        for (const r of response.body.responses) {
+            expect(r.status).toEqual(200);
+        }
+    });
+
 });

@@ -280,10 +280,19 @@ function batch(routerOrApplication, options) {
                     // convert relative urls to absolute urls
                     // e.g. "/api/users" is resolved against the host of the original request
                     // and "users" is resolved against the service root (the base url of the batch endpoint)
-                    if (/^(https?:)?\/\//i.test(batchRequest.url) === false) {
-                        const serviceRoot = req.protocol + '://' + req.get('host') + req.baseUrl.replace(/\/$/, '') + '/';
-                        batchRequest.url = new URL(batchRequest.url, serviceRoot).toString();
+                    const serviceRoot = new URL(req.baseUrl.replace(/\/$/, '') + '/', req.protocol + '://' + req.get('host'));
+                    let uri;
+                    try {
+                        uri = new URL(batchRequest.url, serviceRoot);
+                    } catch (err) {
+                        throw new HttpBadRequestError(`Batch request at index ${index} has an invalid url`);
                     }
+                    // a batch request is allowed to target only resources of the current service
+                    // e.g. a request to another host or to a path outside the service root (even through "../" segments) is prohibited
+                    if (uri.origin !== serviceRoot.origin || uri.pathname.startsWith(serviceRoot.pathname) === false) {
+                        throw new HttpBadRequestError(`Batch request at index ${index} targets a resource outside of the current service`);
+                    }
+                    batchRequest.url = uri.toString();
                     // assign headers from the original request to the batch request
                     // note: only include headers that are specified in the options to prevent leaking sensitive information to the batch requests
                     const inheritedHeaders = Object.keys(req.headers)
