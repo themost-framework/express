@@ -1,4 +1,4 @@
-import {HttpNotAcceptableError, HttpNotFoundError, TraceUtils, HttpBadRequestError, Guid} from '@themost/common';
+import {HttpError, HttpNotFoundError, TraceUtils, HttpBadRequestError, Guid} from '@themost/common';
 import {URL} from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
 import {Router} from 'express';
@@ -98,6 +98,124 @@ class BatchServerResponse extends ServerResponse {
 }
 
 /**
+ * The default collection of headers which are inherited by batch requests from the original request
+ * @type {Array<string>}
+ */
+const DefaultInheritedHeaders = [
+    'authorization',
+    'content-type',
+    'accept',
+    'accept-language',
+    'accept-encoding',
+    'user-agent'
+];
+
+/**
+ * Validates batch request messages
+ * @type {import('ajv').ValidateFunction}
+ */
+const validateBatchRequest = new Ajv({
+    strict: false
+}).compile(BatchRequestMessageSchema);
+
+/**
+ * Overrides the response methods of a batch child response in order to capture its body
+ * and emit a single `batch.data` event when the response is completed
+ * by using res.json(), res.send(), res.end() or by piping a stream to it.
+ * @param {ServerResponse} res
+ */
+function captureResponse(res) {
+    const chunks = [];
+    let completed = false;
+    const complete = (body) => {
+        if (completed) {
+            return;
+        }
+        completed = true;
+        res.body = body;
+        res.emit('batch.data', res);
+    };
+    Object.assign(res, {
+        json(body) {
+            if (!res.getHeader('Content-Type')) {
+                res.setHeader('Content-Type', 'application/json');
+            }
+            complete(body);
+            return res;
+        },
+        send(body) {
+            if (body != null && typeof body === 'object' && !Buffer.isBuffer(body)) {
+                return res.json(body);
+            }
+            if (body != null) {
+                chunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body)));
+            }
+            return res.end();
+        },
+        write(chunk, encoding, callback) {
+            if (typeof encoding === 'function') {
+                callback = encoding;
+                encoding = undefined;
+            }
+            if (chunk != null) {
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
+            }
+            if (typeof callback === 'function') {
+                callback();
+            }
+            return true;
+        },
+        end(chunk, encoding, callback) {
+            if (typeof chunk === 'function') {
+                callback = chunk;
+                chunk = undefined;
+            } else if (typeof encoding === 'function') {
+                callback = encoding;
+                encoding = undefined;
+            }
+            if (chunk != null) {
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
+            }
+            let body;
+            if (chunks.length > 0) {
+                const buffer = Buffer.concat(chunks);
+                const contentType = String(res.getHeader('Content-Type') || '');
+                // return textual content as string and binary content as base64 string
+                body = /^text\/|json|xml/i.test(contentType) || contentType === '' ? buffer.toString() : buffer.toString('base64');
+            }
+            complete(body);
+            if (typeof callback === 'function') {
+                callback();
+            }
+            return res;
+        }
+    });
+}
+
+/**
+ * Converts an error to a batch response item
+ * @param {*} error
+ * @param {boolean} includeStack
+ * @returns {{status: number, body: *}}
+ */
+function toErrorResult(error, includeStack) {
+    const body = Object.getOwnPropertyNames(error).filter((key) => {
+        return key !== 'stack' || includeStack;
+    }).reduce((acc, key) => {
+        acc[key] = error[key];
+        return acc;
+    }, {});
+    // if the error has a constructor name, include it in the response body
+    if (error.constructor && error.constructor.name) {
+        body.name = error.constructor.name;
+    }
+    return {
+        status: error.status || error.statusCode || 500,
+        body
+    };
+}
+
+/**
  * @param {import('express').Router} routerOrApplication - The Express routerOrApplication to use for handling batch requests. This is necessary to execute the batch requests using the same routerOrApplication as the main application.
  * @param {{headers:Array<string>=,min:number=,max:number=}=} options - Optional configuration options for the batch middleware.
  * @returns {import('express').Handler}
@@ -106,33 +224,21 @@ function batch(routerOrApplication, options) {
 
     const batchRouter = Router();
 
-    const opts = options || {
-            min: 2,
-            max: 25,
-            headers: [
-                'authorization',
-                'content-type',
-                'accept',
-                'accept-language',
-                'accept-encoding',
-                'user-agent'
-            ]
-    };
+    const opts = Object.assign({}, options);
     if (typeof opts.min !== 'number') {
         opts.min = 2;
     }
     if (typeof opts.max !== 'number') {
         opts.max = 25;
     }
+    if (Array.isArray(opts.headers) === false) {
+        opts.headers = DefaultInheritedHeaders;
+    }
+    opts.headers = opts.headers.map((header) => header.toLowerCase());
 
     batchRouter.use(function batchInit(req, res, next) {
         // noinspection JSUnresolvedReference
         if (req.batchReq) {
-            // override res.send and res.json to capture the response from the batch request
-            res.json = function (body) {
-                res.body = body;
-                res.emit('batch.data', res);
-            };
             res.on('error', function (err) {
                 res.emit('batch.error', err);
             });
@@ -147,38 +253,50 @@ function batch(routerOrApplication, options) {
 
     batchRouter.post('/\\$batch', function(req, res, next) {
         try {
-            const contentType = req.get('content-type');
-            if (contentType !== 'application/json') {
-                return next(new HttpNotAcceptableError());
+            // noinspection JSUnresolvedReference
+            if (req.batchReq) {
+                return next(new HttpBadRequestError('Nested batch requests are not supported'));
+            }
+            if (!req.is('application/json')) {
+                return next(new HttpError(415));
             }
             const { min, max } = opts;
+            // include error stack in batch responses only in development or test environment
+            const includeStack = ['development', 'test'].includes(req.app && req.app.get('env'));
             // check if the request is a batch request
             const {requests: batchRequests} = req.body;
             if (Array.isArray(batchRequests)) {
                 if (batchRequests.length < min || batchRequests.length > max) {
-                    return next(new HttpNotAcceptableError(`Batch request must contain between ${min} and ${max} requests`));
+                    return next(new HttpBadRequestError(`Batch request must contain between ${min} and ${max} requests`));
                 }
                 // stage #1 - assign id and headers to batch requests
                 batchRequests.forEach((batchRequest, index) => {
                     // assign id to batch request if not provided
                     batchRequest.id  = batchRequest.id || (index + 1).toString();
-                    // convert relative urls to absolute urls by prefixing them with the original request url
-                    if (batchRequest.url.startsWith('/')) {
-                        batchRequest.url = new URL(batchRequest.url, req.protocol + '://' + req.get('host')).toString();
-                    }
                     // validate that batch request has method and url properties
                     if (typeof batchRequest.method !== 'string' || typeof batchRequest.url !== 'string') {
                         throw new HttpBadRequestError(`Batch request at index ${index} is missing required properties 'method' and 'url'`);
                     }
+                    // convert relative urls to absolute urls
+                    // e.g. "/api/users" is resolved against the host of the original request
+                    // and "users" is resolved against the service root (the base url of the batch endpoint)
+                    if (/^(https?:)?\/\//i.test(batchRequest.url) === false) {
+                        const serviceRoot = req.protocol + '://' + req.get('host') + req.baseUrl.replace(/\/$/, '') + '/';
+                        batchRequest.url = new URL(batchRequest.url, serviceRoot).toString();
+                    }
                     // assign headers from the original request to the batch request
                     // note: only include headers that are specified in the options to prevent leaking sensitive information to the batch requests
-                    batchRequest.headers = {
-                        ...Object.keys(req.headers)
-                            .filter(header => opts.headers.includes(header)).reduce((acc, header) => {
-                                acc[header] = req.headers[header];
-                                return acc;
-                            }, {})
-                    };
+                    const inheritedHeaders = Object.keys(req.headers)
+                        .filter(header => opts.headers.includes(header)).reduce((acc, header) => {
+                            acc[header] = req.headers[header];
+                            return acc;
+                        }, {});
+                    // headers defined by the batch request itself take precedence over inherited headers
+                    const ownHeaders = batchRequest.headers != null && typeof batchRequest.headers === 'object' ? Object.keys(batchRequest.headers).reduce((acc, header) => {
+                        acc[header.toLowerCase()] = batchRequest.headers[header];
+                        return acc;
+                    }, {}) : {};
+                    batchRequest.headers = Object.assign(inheritedHeaders, ownHeaders);
                 });
                 // stage #2 - assign atomicity group to batch requests and execute them sequentially
                 const shouldAssignAtomicityGroup = batchRequests.some(batchRequest => batchRequest.atomicityGroup != null);
@@ -196,9 +314,7 @@ function batch(routerOrApplication, options) {
                 const atomicityGroups = {};
                 batchRequests.forEach((batchRequest) => {
                     // validate batch request against the schema
-                    const validate = new Ajv({
-                        strict: false
-                    }).compile(BatchRequestMessageSchema);
+                    const validate = validateBatchRequest;
                     if (validate(batchRequest) === false) {
                         const error = new HttpBadRequestError(`Batch request with id ${batchRequest.id} is invalid`);
                         TraceUtils.error(`Batch request with url "${batchRequest.url}" is invalid`);
@@ -220,6 +336,42 @@ function batch(routerOrApplication, options) {
                         id,
                     }
                 });
+                /**
+                 * Resolves property references e.g. "$$1.id" of the body of the given batch request
+                 * by using the results of the batch requests that have already been executed
+                 * @param {BatchRequestMessage} request
+                 */
+                function resolveReferences(request) {
+                    if (request.body == null || typeof request.body !== 'object') {
+                        return;
+                    }
+                    const body = JSON.parse(JSON.stringify(request.body), (key, value) => {
+                        if (typeof value === 'string' && value.startsWith('$$')) {
+                            // split property path by dot notation to extract dataset and property name for value assignment
+                            // e.g. "$$dataset.property" -> dataset: "dataset", property: "property"
+                            const property = value.substring(2).split('.');
+                            // get dataset name from the property path
+                            const dataset = property.shift();
+                            // get the result of the batch request that corresponds to the dataset name
+                            const result = results.find(r => r.id === dataset);
+                            if (result == null) {
+                                throw new HttpBadRequestError(`Batch request with id "${dataset}" cannot be found for property reference "${value}"`);
+                            }
+                            // a result without status has not been executed yet
+                            if (result.status == null) {
+                                throw new HttpBadRequestError(`Batch request with id "${dataset}" has not been executed before batch request "${request.id}" and cannot be used for property reference "${value}"`);
+                            }
+                            // a referenced request that has failed cannot be used
+                            if (result.status < 200 || result.status >= 300) {
+                                throw new HttpError(424, `Batch request with id "${dataset}" has failed and cannot be used for property reference "${value}"`);
+                            }
+                            const [val] = at(result.body, property);
+                            return val;
+                        }
+                        return value;
+                    });
+                    request.body = request._body = body;
+                }
                 function executeBatchRequestAsync(batchRequest) {
                     return new Promise((resolve, reject) => {
                         try {
@@ -246,6 +398,10 @@ function batch(routerOrApplication, options) {
                             });
                             // create a new response object for the batch request
                             const childRes = new BatchServerResponse(childReq);
+                            // capture the response of the batch request
+                            // note: response methods are defined as own properties because expressInit middleware
+                            // replaces the prototype of the response object with the application response
+                            captureResponse(childRes);
                             // add events to capture the response from the batch request
                             childRes.on(
                                 'batch.data',
@@ -254,12 +410,11 @@ function batch(routerOrApplication, options) {
                                  * @param response
                                  */
                                 function (response) {
-                                    this.end();
                                     this.emit('finish');
                                     resolve({
                                         id: batchRequest.id,
                                         status: response.statusCode,
-                                        headers: response.headers,
+                                        headers: response.getHeaders(),
                                         body: response.body
                                     });
                                 });
@@ -270,27 +425,15 @@ function batch(routerOrApplication, options) {
                                  * @param {*} error
                                  */
                                 function (error) {
-                                    const errorResult = {
-                                        id: batchRequest.id,
-                                        status: error.status || error.statusCode || 500,
-                                        body: Object.getOwnPropertyNames(error).reduce((acc, key) => {
-                                            acc[key] = error[key];
-                                            return acc;
-                                        }, {})
-                                    };
-                                    // if the error has a constructor name, include it in the response body
-                                    // noinspection JSUnresolvedReference
-                                    if (error.constructor && error.constructor.name) {
-                                        errorResult.body.name = error.constructor && error.constructor.name;
-                                    }
-                                    this.end();
+                                    const errorResult = Object.assign(toErrorResult(error, includeStack), {
+                                        id: batchRequest.id
+                                    });
                                     this.emit('finish');
-                                    // noinspection JSUnresolvedReference
-                                    if (this.req.batchReq && this.req.batchReq.atomicityGroup) {
+                                    if (batchRequest.atomicityGroup) {
                                         // if the batch request is part of an atomicity group, throw an error to trigger a transaction rollback for the entire group
-                                        reject(errorResult);
+                                        return reject(errorResult);
                                     }
-                                    resolve(errorResult);
+                                    return resolve(errorResult);
                                 });
                             // noinspection JSUnresolvedReference
                             const router = routerOrApplication._router || routerOrApplication;
@@ -322,31 +465,13 @@ function batch(routerOrApplication, options) {
                             Object.assign(req.context.db, {
                                 identifier: Guid.newGuid().toString()
                             });
+                            // holds the batch request which is currently being executed
+                            let currentRequest = null;
                             return req.context.db.executeInTransactionAsync(async () => {
                                 await Promise.sequence(requests.map((request) => {
                                     return () => {
-                                        // parse body for assigning params in the batch request
-                                        if (request.body && typeof request.body === 'object') {
-                                            const body = JSON.parse(JSON.stringify(request.body), (key, value) => {
-                                                if (typeof value === 'string' && value.startsWith('$$')) {
-                                                    // split property path by dot notation to extract dataset and property name for value assignment
-                                                    // e.g. "$$dataset.property" -> dataset: "dataset", property: "property"
-                                                    const property = value.substring(2).split('.');
-                                                    // get dataset name from the property path
-                                                    const dataset = property.shift();
-                                                    // get the result of the batch request that corresponds to the dataset name
-                                                    const result = results.find(r => r.id === dataset);
-                                                    if (result) {
-                                                        const [val] = at(result.body, property);
-                                                        return val;
-                                                    } else {
-                                                        throw new HttpBadRequestError(`Batch request with id "${dataset}" cannot be found for property reference "${value}"`);
-                                                    }
-                                                }
-                                                return value;
-                                            });
-                                            request.body = request._body = body;
-                                        }
+                                        currentRequest = request;
+                                        resolveReferences(request);
                                         return executeBatchRequestAsync(request).then((intermediateResult) => {
                                             const result = results.find(r => r.id === request.id);
                                             if (result) {
@@ -355,7 +480,19 @@ function batch(routerOrApplication, options) {
                                         });
                                     }
                                 }));
-                            }).catch((atomicityGroupError) => {
+                            }).catch((err) => {
+                                let atomicityGroupError = err;
+                                const isBatchResult = err != null && err.id != null && requests.some((request) => request.id === err.id);
+                                if (isBatchResult === false) {
+                                    // the error was not produced by a batch request (e.g. an invalid property reference
+                                    // or a transaction error), so assign it to the request which was being executed
+                                    TraceUtils.error(`An error occurred while executing atomicity group "${atomicityGroup}"`);
+                                    TraceUtils.error(err);
+                                    const failedRequest = currentRequest || requests[0];
+                                    atomicityGroupError = Object.assign(toErrorResult(err || new Error('Unknown error'), includeStack), {
+                                        id: failedRequest.id
+                                    });
+                                }
                                 // if any request in the atomicity group fails, capture the error for all requests in the group
                                 requests.forEach((request) => {
                                     const result = results.find(r => r.id === request.id);
@@ -366,6 +503,9 @@ function batch(routerOrApplication, options) {
                                             });
                                         } else {
                                             // for requests that belongs to the same atomicity group but did not cause the error, set status to 0 to indicate that they were not executed due to the failure of another request in the same atomicity group
+                                            // and remove any response data since their changes have been rolled back
+                                            delete result.body;
+                                            delete result.headers;
                                             Object.assign(result, {
                                                 status: 0,
                                                 atomicityGroup
@@ -373,10 +513,6 @@ function batch(routerOrApplication, options) {
                                         }
                                     }
                                 });
-                                const result = results.find(r => r.id === atomicityGroupError.id);
-                                if (result) {
-                                    Object.assign(result, atomicityGroupError);
-                                }
                             });
                         }
                     });
@@ -389,9 +525,20 @@ function batch(routerOrApplication, options) {
                     // no atomicity groups, execute batch requests sequentially
                     void Promise.sequence(batchRequests.map((request) => {
                         return () => {
-                            return executeBatchRequestAsync(request);
+                            const result = results.find(r => r.id === request.id);
+                            try {
+                                resolveReferences(request);
+                            } catch (err) {
+                                // an invalid property reference fails only the current batch request
+                                return Object.assign(result, toErrorResult(err, includeStack), {
+                                    id: request.id
+                                });
+                            }
+                            return executeBatchRequestAsync(request).then((intermediateResult) => {
+                                return Object.assign(result, intermediateResult);
+                            });
                         }
-                    })).then((results) => {
+                    })).then(() => {
                         res.json({ responses: results });
                     }).catch((err) => {
                         next(err);

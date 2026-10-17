@@ -41,9 +41,9 @@ const schema = {
   "definitions": {
     "relativeUri": {
       "type": "string",
-      "pattern": "^((?:https?:)?\/\/)",
-      "title": "Relative URI",
-      "description": "A relative URI that does not include the scheme and host. It may include query parameters and fragments."
+      "pattern": "^((?:https?:)?//)",
+      "title": "Absolute URI",
+      "description": "An absolute or protocol-relative URI. Relative URIs of batch requests are resolved against the host or the service root before validation. It may include query parameters and fragments."
     }
   }
 }

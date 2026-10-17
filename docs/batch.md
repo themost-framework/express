@@ -34,7 +34,7 @@ The `$batch` endpoint accepts a JSON payload containing an array of sub-requests
 | Sequential execution | Yes |
 | Per-request error isolation (without atomicity groups) | Yes |
 | Atomicity groups with database transactions | Yes |
-| Body property references (`$$id.property`) | Yes (inside atomicity groups) |
+| Body property references (`$$id.property`) | Yes |
 | URL references (`$id`) | No |
 | `dependsOn` field | No (defined in schema, not enforced) |
 | OData multipart batch format | No |
@@ -79,7 +79,7 @@ Content-Type: application/json
 | Requirement | Value |
 |-------------|-------|
 | HTTP method | `POST` |
-| Content-Type | `application/json` (required; other types return `406 Not Acceptable`) |
+| Content-Type | `application/json` (required, charset parameter allowed; other types return `415 Unsupported Media Type`) |
 | Minimum sub-requests | `2` (default, configurable) |
 | Maximum sub-requests | `25` (default, configurable) |
 
@@ -119,11 +119,11 @@ Authentication and other headers from the outer request are forwarded to each su
 |-------|----------|-------------|
 | `id` | No | Unique identifier for the sub-request. Auto-assigned as `"1"`, `"2"`, … when omitted. |
 | `method` | Yes | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`. |
-| `url` | Yes | Target path. Paths starting with `/` are resolved against the host of the outer request. |
+| `url` | Yes | Target URL. Paths starting with `/` are resolved against the host of the outer request; other relative URLs (e.g. `users/me`) are resolved against the service root (the path where `batch()` is mounted). |
 | `body` | No | Request body for `POST`, `PUT`, or `PATCH`. |
 | `atomicityGroup` | No | Group name for transactional execution. See [Atomicity Groups](#atomicity-groups). |
 | `dependsOn` | No | Present in the JSON schema but **not used** by the current implementation. |
-| `headers` | No | Ignored — sub-request headers are copied from the outer request instead. |
+| `headers` | No | Sub-request headers. They are merged with the headers inherited from the outer request and take precedence over them. |
 
 ### URL resolution
 
@@ -131,6 +131,7 @@ Relative URLs are converted to absolute URLs before routing:
 
 ```
 /api/users/me  →  http://<host>/api/users/me
+users/me       →  http://<host>/api/users/me   (batch() mounted at /api/)
 ```
 
 Only the pathname and query string are used when the sub-request is dispatched through Express.
@@ -407,7 +408,7 @@ References can point to a request in a different atomicity group, as long as tha
 
 ### When references are resolved
 
-`$$` substitution happens **only** for sub-requests inside atomicity groups, immediately before each sub-request executes. Batches without atomicity groups do not resolve `$$` references.
+`$$` substitution happens immediately before each sub-request executes, both with and without atomicity groups. A reference to a sub-request that has not been executed yet fails with `400 Bad Request`, and a reference to a sub-request that failed fails with `424 Failed Dependency`. Without atomicity groups, such an error fails only the referencing sub-request; inside an atomicity group, it rolls back the whole group.
 
 ---
 
@@ -419,12 +420,12 @@ These cause the outer request to fail (non-`200` status):
 
 | Condition | Status |
 |-----------|--------|
-| `Content-Type` is not `application/json` | `406 Not Acceptable` |
-| Fewer than `min` or more than `max` sub-requests | `406 Not Acceptable` |
+| `Content-Type` is not `application/json` | `415 Unsupported Media Type` |
+| Fewer than `min` or more than `max` sub-requests | `400 Bad Request` |
+| `$batch` request nested inside another batch | `400 Bad Request` (returned as sub-request result) |
 | Missing `method` or `url` on a sub-request | `400 Bad Request` |
 | `atomicityGroup` present on some but not all sub-requests | `400 Bad Request` |
 | Sub-request fails JSON schema validation | `400 Bad Request` |
-| Unresolvable `$$` reference | `400 Bad Request` |
 
 ### Sub-request errors
 
@@ -434,10 +435,11 @@ Returned inside the `responses` array:
 |----------|---------------------|
 | Handler error | Error status (e.g. `500`) with error properties in `body` |
 | Route not found | `404` |
-| Atomicity group sibling after a failure | `0` (not executed) |
+| Atomicity group sibling after a failure | `0` (not executed or rolled back; `body` and `headers` are removed) |
+| Unresolvable `$$` reference | `400` (unknown or not yet executed request) or `424` (failed request) |
 | Atomicity group member that caused the failure | Original error status |
 
-Error bodies include enumerable error properties plus a `name` field with the error constructor name when available.
+Error bodies include the error properties plus a `name` field with the error constructor name when available. The `stack` property is included only when the application environment is `development` or `test`.
 
 ### Inspecting results
 
@@ -547,9 +549,6 @@ The following are **not** supported by the current implementation:
 | `$id` URL references | Use full paths or `$$id.property` in bodies instead. |
 | `dependsOn` | Defined in the schema but not enforced or used for ordering. |
 | OData multipart/mixed format | Only `application/json` is accepted. |
-| Per-sub-request custom headers | Headers are always inherited from the outer request. |
-| `$$` references outside atomicity groups | Property substitution only runs inside transactional groups. |
-| HTTP `424 Failed Dependency` | Skipped group members use `status: 0`, not `424`. |
 | Parallel sub-request execution | All sub-requests run one after another. |
 
 ---

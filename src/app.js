@@ -290,7 +290,15 @@ class ExpressDataApplication extends IApplication {
           /**
            * Finalizes the current context by disposing the underlying data adapter if exists and then calling the finalize method of the context
            */
+          let finalized = false;
           const closeListener = function() {
+              // finalize context only once, either on response finish or close
+              if (finalized) {
+                  return;
+              }
+              finalized = true;
+              res.removeListener('finish', closeListener);
+              res.removeListener('close', closeListener);
               if (req.context) {
                   // if db is a disposable adapter
                   if (req.context.db && typeof req.context.db.dispose === 'function') {

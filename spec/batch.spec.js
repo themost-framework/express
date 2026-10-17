@@ -37,6 +37,15 @@ describe('Batch', () => {
         passport.use(passportStrategy);
         // noinspection JSCheckFunctionSignatures
         app.use('/api/', passport.authenticate('bearer', { session: false }), batch(app), serviceRouter);
+        // test routes which do not use res.json()
+        app.delete('/api/TestNoContent', (req, res) => res.sendStatus(204));
+        app.get('/api/TestText', (req, res) => res.type('text/plain').send('hello'));
+        app.get('/api/TestHeaders', (req, res) => res.json({ accept: req.get('accept'), language: req.get('accept-language') }));
+        app.get('/api/TestBinary', (req, res) => {
+            res.type('application/octet-stream');
+            res.write(Buffer.from([1, 2]));
+            res.end(Buffer.from([3]));
+        });
         app.use(jsonErrorHandler())
     });
 
@@ -470,6 +479,238 @@ describe('Batch', () => {
             expect(r.body).toBeDefined();
             expect(r.status).toEqual(200);
         }
+    });
+
+
+    it('should capture responses which do not use res.json()', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    { id: '1', method: 'DELETE', url: '/api/TestNoContent' },
+                    { id: '2', method: 'GET', url: '/api/TestText' },
+                    { id: '3', method: 'GET', url: '/api/TestBinary' }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        const [noContent, text, binary] = response.body.responses;
+        expect(noContent.status).toEqual(204);
+        expect(text.status).toEqual(200);
+        expect(text.body).toEqual('hello');
+        expect(binary.body).toEqual(Buffer.from([1, 2, 3]).toString('base64'));
+    });
+
+    it('should reject nested batch requests', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    { id: '1', method: 'GET', url: '/api/users/me' },
+                    {
+                        id: '2',
+                        method: 'POST',
+                        url: '/api/$batch',
+                        body: {
+                            requests: [
+                                { id: '1', method: 'GET', url: '/api/users/me' },
+                                { id: '2', method: 'GET', url: '/api/users/me' }
+                            ]
+                        }
+                    }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        const nested = response.body.responses.find(r => r.id === '2');
+        expect(nested.status).toEqual(400);
+    });
+
+    it('should not include error stack in production', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const env = app.get('env');
+        app.set('env', 'production');
+        try {
+            const response = await request(app).post('/api/$batch')
+                .set('Content-Type', 'application/json')
+                .set('Accept', 'application/json')
+                .send({
+                    requests: [
+                        { id: '1', method: 'GET', url: '/api/users/me' },
+                        { id: '2', method: 'GET', url: '/api/NonExistingEndpoint' }
+                    ]
+                });
+            expect(response.status).toEqual(200);
+            const failed = response.body.responses.find(r => r.id === '2');
+            expect(failed.status).toEqual(404);
+            expect(failed.body.stack).toBeUndefined();
+        } finally {
+            app.set('env', env);
+        }
+    });
+
+    it('should report invalid property references and clear rolled back responses', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'POST',
+                        atomicityGroup: 'create-user',
+                        url: '/api/users',
+                        body: {
+                            name: 'Test User 101',
+                            alternateName: 'test101@example.com'
+                        }
+                    },
+                    {
+                        id: '2',
+                        method: 'POST',
+                        atomicityGroup: 'create-user',
+                        url: '/api/groups',
+                        body: {
+                            name: '$$missing.name'
+                        }
+                    }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        const [created, failed] = response.body.responses;
+        expect(created.status).toEqual(0);
+        expect(created.body).toBeUndefined();
+        expect(failed.status).toEqual(400);
+        expect(failed.body.message).toContain('missing');
+    });
+
+
+    it('should accept content type with charset and reject other content types', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        let response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json; charset=utf-8')
+            .set('Accept', 'application/json')
+            .send(JSON.stringify({
+                requests: [
+                    { id: '1', method: 'GET', url: '/api/users/me' },
+                    { id: '2', method: 'GET', url: '/api/users/me' }
+                ]
+            }));
+        expect(response.status).toEqual(200);
+        response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'text/plain')
+            .set('Accept', 'application/json')
+            .send('requests');
+        expect(response.status).toEqual(415);
+        response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({ requests: [{ id: '1', method: 'GET', url: '/api/users/me' }] });
+        expect(response.status).toEqual(400);
+    });
+
+    it('should resolve service root relative urls and validate url', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        let response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    { id: '1', method: 'GET', url: 'users/me' },
+                    { id: '2', method: 'GET', url: 'groups?$select=name' }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        for (const r of response.body.responses) {
+            expect(r.status).toEqual(200);
+        }
+        response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    { id: '1', method: 'GET' },
+                    { id: '2', method: 'GET', url: 'users/me' }
+                ]
+            });
+        expect(response.status).toEqual(400);
+    });
+
+    it('should use request headers over inherited headers', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .set('Accept-Language', 'en')
+            .send({
+                requests: [
+                    { id: '1', method: 'GET', url: '/api/TestHeaders', headers: { 'Accept-Language': 'el' } },
+                    { id: '2', method: 'GET', url: '/api/TestHeaders' }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        const [own, inherited] = response.body.responses;
+        expect(own.body).toEqual({ accept: 'application/json', language: 'el' });
+        expect(inherited.body).toEqual({ accept: 'application/json', language: 'en' });
+    });
+
+    it('should accept options without headers', async () => {
+        const other = express();
+        other.use(express.json());
+        other.use('/api/', batch(other, { max: 5 }));
+        other.get('/api/TestText', (req, res) => res.type('text/plain').send('hello'));
+        const response = await request(other).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .send({
+                requests: [
+                    { id: '1', method: 'GET', url: 'TestText' },
+                    { id: '2', method: 'GET', url: 'TestText' }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        expect(response.body.responses.map(r => r.body)).toEqual(['hello', 'hello']);
+    });
+
+    it('should not resolve references to requests that have not been executed', async () => {
+        jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
+            return { name: 'alexis.rees@example.com' };
+        });
+        const response = await request(app).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json')
+            .send({
+                requests: [
+                    { id: '1', method: 'GET', url: '/api/users/me' },
+                    { id: '2', method: 'POST', url: '/api/groups', body: { name: '$$3.name' } },
+                    { id: '3', method: 'GET', url: '/api/users/me' },
+                    { id: '4', method: 'POST', url: '/api/groups', body: { name: '$$5.name' } },
+                    { id: '5', method: 'GET', url: '/api/NonExistingEndpoint' },
+                    { id: '6', method: 'POST', url: '/api/groups', body: { name: '$$5.name' } }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        const byId = (id) => response.body.responses.find(r => r.id === id);
+        expect(byId('2').status).toEqual(400);
+        expect(byId('3').status).toEqual(200);
+        expect(byId('4').status).toEqual(400);
+        expect(byId('6').status).toEqual(424);
     });
 
 });
