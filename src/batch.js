@@ -295,8 +295,9 @@ function batch(routerOrApplication, options) {
                     batchRequest.url = uri.toString();
                     // assign headers from the original request to the batch request
                     // note: only include headers that are specified in the options to prevent leaking sensitive information to the batch requests
+                    // note: authorization header is always inherited from the original request
                     const inheritedHeaders = Object.keys(req.headers)
-                        .filter(header => opts.headers.includes(header)).reduce((acc, header) => {
+                        .filter(header => header === 'authorization' || opts.headers.includes(header)).reduce((acc, header) => {
                             acc[header] = req.headers[header];
                             return acc;
                         }, {});
@@ -305,6 +306,11 @@ function batch(routerOrApplication, options) {
                         acc[header.toLowerCase()] = batchRequest.headers[header];
                         return acc;
                     }, {}) : {};
+                    // a batch request cannot define its own authorization header because all batch requests
+                    // are executed on behalf of the user of the original request and share the same data context
+                    if (Object.prototype.hasOwnProperty.call(ownHeaders, 'authorization')) {
+                        throw new HttpBadRequestError(`Batch request at index ${index} cannot define authorization header. Authorization is inherited from the batch request.`);
+                    }
                     batchRequest.headers = Object.assign(inheritedHeaders, ownHeaders);
                 });
                 // stage #2 - assign atomicity group to batch requests and execute them sequentially
