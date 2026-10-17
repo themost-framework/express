@@ -762,7 +762,7 @@ describe('Batch', () => {
     });
 
 
-    it('should prohibit identity headers in batch requests', async () => {
+    it('should prohibit different restricted headers in batch requests', async () => {
         jest.spyOn(passportStrategy, 'getUser').mockImplementation(() => {
             return { name: 'alexis.rees@example.com' };
         });
@@ -777,11 +777,37 @@ describe('Batch', () => {
                     ]
                 });
             expect(response.status).toEqual(400);
-            expect(response.body.message).toContain(`cannot define ${header.toLowerCase()} header`);
+            expect(response.body.message).toContain(`cannot define a different ${header.toLowerCase()} header`);
         }
     });
 
-    it('should always inherit identity headers', async () => {
+    it('should allow restricted headers equal to the original request', async () => {
+        const other = express();
+        other.use(express.json());
+        other.use('/api/', batch(other));
+        other.get('/api/TestAuthorization', (req, res) => res.json({ authorization: req.get('authorization'), cookie: req.get('cookie') }));
+        const response = await request(other).post('/api/$batch')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer parent-token')
+            .set('Cookie', 'sid=parent-session')
+            .send({
+                requests: [
+                    {
+                        id: '1',
+                        method: 'GET',
+                        url: 'TestAuthorization',
+                        headers: { Authorization: 'Bearer parent-token', Cookie: 'sid=parent-session' }
+                    },
+                    { id: '2', method: 'GET', url: 'TestAuthorization' }
+                ]
+            });
+        expect(response.status).toEqual(200);
+        for (const r of response.body.responses) {
+            expect(r.body).toEqual({ authorization: 'Bearer parent-token', cookie: 'sid=parent-session' });
+        }
+    });
+
+    it('should always inherit restricted headers', async () => {
         const other = express();
         other.use(express.json());
         // authorization is not included in the inherited headers
