@@ -34,5 +34,8 @@ jsconfig.json
 typescript
 tsconfig.json
 
+# docs
+docs/*.md
+docs/**/*.md
 
 
