@@ -29,6 +29,11 @@ class User extends DataObject {
         return context.model('User').where('name').equal(context.user.name).getItem();
     }
 
+    @EdmMapping.func('status', EdmType.EdmBoolean)
+    getStatus() {
+        throw new Error('This is a status error');
+    }
+
     @EdmMapping.param('name', EdmType.EdmString, false)
     @EdmMapping.func('active', 'User')
     static getActiveUser(context, name) {
