@@ -107,6 +107,11 @@ function findByAlternateName(item) {
 }
 
 function getServiceRouter(app) {
+    if (app && typeof app.lazyrouter === 'function') {
+        app.lazyrouter();
+        const router = app._router.stack.find(findByAlternateName);
+        return router ? router.handle : null;
+    }
     if (app && app.router && app.router.stack) {
         const router = app.router.stack.find(findByAlternateName);
         if (router) {
