@@ -1,6 +1,6 @@
 import path from 'path';
 import {HttpRoute, RouterService, ExpressDataApplication} from '@themost/express';
-import {finalizeDataApplication} from './utils';
+import {finalizeDataApplication} from '../utils';
 
 describe('HttpRoute', () => {
 
@@ -121,7 +121,7 @@ describe('RouterService', () => {
      */
     let app;
     beforeAll(() => {
-        app = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+        app = new ExpressDataApplication(path.resolve(__dirname, '../test/config'));
     });
     afterAll(async () => {
         await finalizeDataApplication(app);

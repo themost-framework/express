@@ -1,5 +1,5 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
-import {ExpressDataContext} from './app';
+import {ExpressDataContext} from '../app';
 import {HttpJsonResult, HttpXmlResult, HttpContentResult, HttpRedirectResult, HttpNextResult} from './results';
 
 export declare class HttpConsumer {

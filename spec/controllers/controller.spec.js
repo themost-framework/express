@@ -20,7 +20,7 @@ import {
     httpAuthorize,
     httpActionConsumer
 } from '@themost/express';
-import {finalizeDataApplication} from './utils';
+import {finalizeDataApplication} from '../utils';
 
 @httpController('hello')
 class HelloController extends HttpController {
@@ -132,7 +132,7 @@ describe('HttpController', () => {
      */
     let container;
     beforeAll(() => {
-        app = new ExpressDataApplication(path.resolve(__dirname, 'test/config'));
+        app = new ExpressDataApplication(path.resolve(__dirname, '../test/config'));
         app.useService(RouterService);
         const routerService = app.getService(RouterService);
         routerService.useController(HelloController);
