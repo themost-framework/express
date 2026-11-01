@@ -8,3 +8,9 @@ export * from './formatter';
 export * from './context';
 export * from './entity-id';
 export * from './batch';
+
+export * from './route';
+export * from './results';
+export * from './controller';
+export * from './decorators';
+export * from './controller-router';
