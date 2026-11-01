@@ -1,9 +1,8 @@
 import path from 'path';
 import express from 'express';
 import request from 'supertest';
+import {ExpressDataApplication, ExpressDataContext} from '@themost/express';
 import {
-    ExpressDataApplication,
-    ExpressDataContext,
     RouterService,
     HttpController,
     HttpConsumer,
@@ -19,7 +18,7 @@ import {
     httpParamAlias,
     httpAuthorize,
     httpActionConsumer
-} from '@themost/express';
+} from '@themost/express/controllers';
 import {finalizeDataApplication} from '../utils';
 
 @httpController('hello')

@@ -1,5 +1,6 @@
 import path from 'path';
-import {HttpRoute, RouterService, ExpressDataApplication} from '@themost/express';
+import {ExpressDataApplication} from '@themost/express';
+import {HttpRoute, RouterService} from '@themost/express/controllers';
 import {finalizeDataApplication} from '../utils';
 
 describe('HttpRoute', () => {

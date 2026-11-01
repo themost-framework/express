@@ -6,11 +6,11 @@
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "clean": "rimraf dist",
-    "build": "rimraf dist && rollup -c rollup.config.js -m",
-    "watch": "rimraf dist && rollup -c rollup.config.js -m -w",
+    "clean": "rimraf dist controllers/dist",
+    "build": "rimraf dist controllers/dist && rollup -c rollup.config.js -m",
+    "watch": "rimraf dist controllers/dist && rollup -c rollup.config.js -m -w",
     "test": "jest",
-    "lint": "eslint src"
+    "lint": "eslint src controllers/src"
   },
   "engines": {
     "node": ">=14.21.3"

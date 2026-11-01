@@ -30,7 +30,7 @@ class HttpConsumer {
 class HttpController {
     constructor() {
         /**
-         * @type {import('../app').ExpressDataContext}
+         * @type {import('@themost/express').ExpressDataContext}
          */
         this.context = undefined;
     }

@@ -8,14 +8,14 @@ index: 550
 
 # Build HTTP Controllers
 
-An HTTP controller is a class whose decorated methods handle requests. Controllers and their routes are registered in `RouterService`, an application service, and `controllerRouter()` dispatches matching requests to them. Every controller gets the request-scoped data context of the data middleware, so actions can query models just like a [custom route](custom-routes-and-data-access.md).
+An HTTP controller is a class whose decorated methods handle requests. Controllers are provided by the `@themost/express/controllers` module. Controllers and their routes are registered in `RouterService`, an application service, and `controllerRouter()` dispatches matching requests to them. Every controller gets the request-scoped data context of the data middleware, so actions can query models just like a [custom route](custom-routes-and-data-access.md).
 
 ## Define a controller
 
 ```js
 import {
-  HttpController, httpController, httpGet, httpPost, httpAction, httpParam, httpRoute
-} from '@themost/express';
+  HttpController, httpController, httpGet, httpAction, httpParam, httpRoute
+} from '@themost/express/controllers';
 
 @httpController('products')
 class ProductController extends HttpController {
@@ -47,7 +47,8 @@ Decorators use the legacy proposal syntax, so a JavaScript project needs `@babel
 
 ```js
 import express from 'express';
-import { ExpressDataApplication, RouterService, controllerRouter } from '@themost/express';
+import { ExpressDataApplication } from '@themost/express';
+import { RouterService, controllerRouter } from '@themost/express/controllers';
 
 const app = express();
 const dataApplication = new ExpressDataApplication(configPath);

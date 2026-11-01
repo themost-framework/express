@@ -105,7 +105,7 @@ function toHttpResult(value) {
 /**
  * Returns an express router which handles requests by using the HTTP controllers and routes
  * registered in RouterService of the given application
- * @param {import('../app').ExpressDataApplication} app
+ * @param {import('@themost/express').ExpressDataApplication} app
  * @returns {import('express').Router}
  */
 function controllerRouter(app) {

@@ -5,6 +5,9 @@
         "paths": {
             "@themost/express": [
                 "src"
+            ],
+            "@themost/express/controllers": [
+                "controllers/src"
             ]
         }
     }
