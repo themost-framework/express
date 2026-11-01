@@ -1,4 +1,3 @@
-// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
 import {TraceUtils, HttpBadRequestError, HttpUnauthorizedError} from '@themost/common';
 import {DataTypeValidator, MinLengthValidator, MaxLengthValidator,
     MinValueValidator, MaxValueValidator, RequiredValidator, PatternValidator} from '@themost/data';

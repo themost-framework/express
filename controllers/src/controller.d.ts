@@ -1,4 +1,3 @@
-// MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
 import {ExpressDataContext} from '@themost/express';
 import {HttpJsonResult, HttpXmlResult, HttpContentResult, HttpRedirectResult, HttpNextResult} from './results';
 
