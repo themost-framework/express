@@ -17,6 +17,9 @@ const HTTP_ROUTE_PATTERNS = new Map([
     ['guid', () => {
         return '^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$';
     }],
+    ['uuid', () => {
+        return '^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$';
+    }],
     ['string', () => {
         return '^\'(.*)\'$';
     }],
