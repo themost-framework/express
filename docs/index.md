@@ -4,6 +4,10 @@ summary: The @themost/express package connects an Express application to @themos
 category: Folder
 ---
 
+## Controllers
+
+- [Build HTTP controllers](http-controllers.md) - controller classes, route patterns, action results, parameter validation and authorization.
+
 ## Batch requests
 
 - [Send batch requests with $batch](batch-getting-started.md) - mount the middleware, send several calls in one request and read the results.
