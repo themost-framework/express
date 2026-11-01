@@ -94,4 +94,4 @@ During an action `this.context` is the request data context, and `this.context.r
 
 - `httpParam({ name, type, required, pattern, minLength, maxLength, minValue, maxValue, message })` validates an argument with the `@themost/data` validators and rejects invalid requests with `400 Bad Request`. `type` is a data type name such as `Text` (default), `Integer` or `Email`. The method decorators accept the same rules in their `params` option.
 - `httpAuthorize()` rejects requests of anonymous users with `401 Unauthorized`.
-- `httpActionConsumer(name, consumer)` runs a custom function (or `HttpConsumer`) before the action. Consumers are called with `this` set to the data context and the resolved action arguments as their only argument, and must return a promise; a rejection stops the request.
+- `httpActionConsumer(name, consumer)` runs a custom function (or `HttpConsumer`) before the action. Consumers are called with the data context as their first argument and the resolved action arguments as their second, e.g. `(context, params) => Promise.resolve()`, and must return a promise; a rejection stops the request.

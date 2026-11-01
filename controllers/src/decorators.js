@@ -248,10 +248,9 @@ function httpParam(options) {
         descriptor.value.httpParams[options.name] = Object.assign({ type: 'Text' }, options);
         if (typeof descriptor.value.httpParam === 'undefined') {
             /**
-             * Validates action parameters. A consumer is executed with this=context and the action parameters as argument
+             * Validates action parameters. A consumer is executed with the context and the action parameters as arguments
              */
-            descriptor.value.httpParam = new HttpConsumer(function(params) {
-                const context = this;
+            descriptor.value.httpParam = new HttpConsumer((context, params) => {
                 const httpParams = descriptor.value.httpParams;
                 for (const name of Object.keys(httpParams)) {
                     const httpParamItem = httpParams[name];
@@ -285,8 +284,7 @@ function httpAuthorize(value) {
         validateMethodDescriptor(descriptor);
         const authorize = typeof value === 'boolean' ? value : true;
         if (authorize) {
-            descriptor.value.authorize = new HttpConsumer(function() {
-                const context = this;
+            descriptor.value.authorize = new HttpConsumer((context) => {
                 if (context.user && context.user.name !== 'anonymous') {
                     return Promise.resolve();
                 }

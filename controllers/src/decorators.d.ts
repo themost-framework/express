@@ -1,5 +1,5 @@
 // MOST Web Framework 2.0 Codename Blueshift Copyright (c) 2019-2023, THEMOST LP All rights reserved
-import {HttpConsumer} from './controller';
+import {HttpConsumer, HttpConsumerCallable} from './controller';
 
 export declare class DecoratorError extends Error {
     constructor(msg?: string);
@@ -58,4 +58,4 @@ export declare function httpRoute(url: string, index?: number): MethodDecorator;
 export declare function httpParamAlias(name: string, alias: string): MethodDecorator;
 export declare function httpParam(options: HttpParamAttributeOptions): MethodDecorator;
 export declare function httpAuthorize(value?: boolean): MethodDecorator;
-export declare function httpActionConsumer(name: string, consumer: HttpConsumer | ((this: any, ...args: any[]) => Promise<any>)): MethodDecorator;
+export declare function httpActionConsumer(name: string, consumer: HttpConsumer | HttpConsumerCallable): MethodDecorator;

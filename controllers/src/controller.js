@@ -7,20 +7,20 @@ import {HttpJsonResult, HttpXmlResult, HttpContentResult, HttpRedirectResult, Ht
  */
 class HttpConsumer {
     /**
-     * @param {function(...*):Promise<*>} callable
+     * @param {function(*, ...*):Promise<*>} callable A function which accepts the context as first argument
      */
     constructor(callable) {
         this.callable = callable;
     }
 
     /**
-     * Executes callable against the given context
+     * Executes callable by passing the given context as first argument
      * @param {*} context
      * @param {...*} args
      * @returns {Promise<*>}
      */
     run(context, ...args) {
-        return this.callable.apply(context, args);
+        return this.callable(context, ...args);
     }
 }
 

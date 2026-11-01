@@ -75,8 +75,7 @@ class HelloController extends HttpController {
     }
 
     @httpGet()
-    @httpActionConsumer('custom', function() {
-        const context = this;
+    @httpActionConsumer('custom', (context) => {
         context.customConsumer = true;
         return Promise.resolve();
     })
@@ -183,8 +182,8 @@ describe('HttpController', () => {
     });
 
     it('should run HttpConsumer', async () => {
-        const consumer = new HttpConsumer(function(value) {
-            expect(this).toBeInstanceOf(ExpressDataContext);
+        const consumer = new HttpConsumer((context, value) => {
+            expect(context).toBeInstanceOf(ExpressDataContext);
             return Promise.resolve(value);
         });
         const context = app.createContext();

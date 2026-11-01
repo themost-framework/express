@@ -2,9 +2,11 @@
 import {ExpressDataContext} from '@themost/express';
 import {HttpJsonResult, HttpXmlResult, HttpContentResult, HttpRedirectResult, HttpNextResult} from './results';
 
+export declare type HttpConsumerCallable = (context: any, ...args: any[]) => Promise<any>;
+
 export declare class HttpConsumer {
-    callable: (this: any, ...args: any[]) => Promise<any>;
-    constructor(callable: (this: any, ...args: any[]) => Promise<any>);
+    callable: HttpConsumerCallable;
+    constructor(callable: HttpConsumerCallable);
     run(context: any, ...args: any[]): Promise<any>;
 }
 
