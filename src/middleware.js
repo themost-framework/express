@@ -882,7 +882,7 @@ function getEntitySetFunction(options) {
                             if (count) {
                                 return q1.getList().then(result => {
                                     if (returnEntitySet) {
-                                        const data = returnEntitySet.mapInstance(req.context, result);
+                                        const data = returnEntitySet.mapInstanceSet(req.context, result);
                                         return tryFormat(data, req, res);
                                     }
                                     return tryFormat(result, req, res);
@@ -890,7 +890,7 @@ function getEntitySetFunction(options) {
                             }
                             return q1.getItems().then(result => {
                                 if (returnEntitySet) {
-                                    const data = returnEntitySet.mapInstance(req.context, result);
+                                    const data = returnEntitySet.mapInstanceSet(req.context, result);
                                     return tryFormat(data, req, res);
                                 }
                                 return tryFormat(result, req, res);

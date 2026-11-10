@@ -85,4 +85,19 @@ describe('EntitySetFunction', () => {
 
     });
 
+    it('should GET /api/users/staticFuncWhichReturnsCollection', async () => {
+        const mock = jest.spyOn(passportStrategy, 'getUser');
+        mock.mockImplementation(() => {
+            return {
+                name: 'alexis.rees@example.com'
+            };
+        });
+        let response = await request(app)
+            .get('/api/users/staticFuncWhichReturnsCollection')
+            .set('Content-Type', 'application/json')
+            .set('Accept', 'application/json');
+        expect(response.status).toEqual(200);
+        expect(response.body).toBeTruthy();
+    });
+
 });
