@@ -131,5 +131,10 @@ class User extends DataObject {
         return null;
     }
 
+    @EdmMapping.func('staticFuncWhichReturnsCollection',  EdmType.CollectionOf('User'))
+    static getStaticFuncWhichReturnsCollection(context) {
+        return context.model('User').where('groups/name').equal('Administrators');
+    }
+
 }
 module.exports = User;
