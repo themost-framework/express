@@ -76,7 +76,7 @@ class User extends DataObject {
      * @returns {{dateCreated: Date}}
      */
     @EdmMapping.param('attributes', 'Object', true, true)
-    @EdmMapping.param('file', EdmType.EdmStream, true)
+    @EdmMapping.param('file', EdmType.EdmStream, false)
     @EdmMapping.action('uploadTestAvatar', 'Object')
     static async uploadTestAvatar(context, file, attributes) {
         // eslint-disable-next-line no-unused-vars
@@ -129,6 +129,11 @@ class User extends DataObject {
     // eslint-disable-next-line no-unused-vars
     static staticPostEmptyContent(context, message) {
         return null;
+    }
+
+    @EdmMapping.func('staticFuncWhichReturnsCollection',  EdmType.CollectionOf('User'))
+    static getStaticFuncWhichReturnsCollection(context) {
+        return context.model('User').where('groups/name').equal('Administrators');
     }
 
 }
